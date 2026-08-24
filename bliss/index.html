@@ -59,6 +59,11 @@ h1,h2,h3{font-family:"Archivo",system-ui,sans-serif;letter-spacing:-.02em}
 .nav-menu a:hover{background:var(--paper)}
 .nav-menu a.on{color:var(--accent);font-weight:600}
 .nav-menu .sep{height:1px;background:var(--line-soft);margin:5px 4px}
+.sold-tag{font-style:normal;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--c-reels);border:1px solid currentColor;border-radius:3px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+.nav-inline a.is-sold{opacity:.6}
+.rail-sold{flex:none;font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--c-reels);
+  border:1px solid currentColor;border-radius:3px;padding:2px 6px}
 
 /* ---------- dark theme ---------- */
 html[data-theme="dark"]{
@@ -487,12 +492,20 @@ const CAMPAIGN = {
     "home": "../",
     "projects": [
       {
+        "slug": "bliss-villas-huzoom-lusail",
         "label": "Bliss Villas",
-        "href": "../bliss/"
+        "href": "../bliss/",
+        "dir": "bliss",
+        "blurb": "Brochure · 4 photo ads · 1 reel · 31-photo gallery",
+        "status": "live"
       },
       {
+        "slug": "the-ocean-residences",
         "label": "The Ocean Residences",
-        "href": "../ocean/"
+        "href": "../ocean/",
+        "dir": "ocean",
+        "blurb": "Brochure · 17 photo ads (EN + AR) · 2 launch films · 40-photo gallery",
+        "status": "live"
       }
     ]
   }
@@ -1766,14 +1779,23 @@ document.title = `${CAMPAIGN.project} — Creatives`;
   nav.hidden = false;
   const menu = document.getElementById('navMenu');
   const here = location.pathname.replace(/index\.html$|full\.html$/,'');
-  const links = [{label:'All projects', href: CAMPAIGN.nav.home||'../', cls:''}];
+  const links = [{label:'All projects', href: CAMPAIGN.nav.home||'../', cls:'', sold:false}];
   for(const p of (CAMPAIGN.nav.projects||[])){
+    if((p.status||'live')==='hidden') continue;
     const target = new URL(p.href, location.href).pathname;
-    links.push({label:p.label, href:p.href, cls: here===target?'on':''});
+    links.push({label:p.label, href:p.href, cls: here===target?'on':'', sold:(p.status||'live')==='soldout'});
   }
-  menu.innerHTML = links.map((l,i)=>`<a href="${esc(l.href)}" class="${l.cls}">${esc(l.label)}</a>${i===0?'<div class="sep"></div>':''}`).join('');
+  const badge = l => l.sold ? ' <em class="sold-tag">Sold out</em>' : '';
+  menu.innerHTML = links.map((l,i)=>`<a href="${esc(l.href)}" class="${l.cls}">${esc(l.label)}${badge(l)}</a>${i===0?'<div class="sep"></div>':''}`).join('');
   document.getElementById('navInline').innerHTML =
-    links.map(l=>`<a href="${esc(l.href)}" class="${l.cls}">${esc(l.label)}</a>`).join('');
+    links.map(l=>`<a href="${esc(l.href)}" class="${l.cls}${l.sold?' is-sold':''}">${esc(l.label)}${badge(l)}</a>`).join('');
+  // banner on the deck itself when this project is sold out
+  const mine = (CAMPAIGN.nav.projects||[]).find(p=>new URL(p.href, location.href).pathname===here);
+  if(mine && mine.status==='soldout'){
+    const tag = document.createElement('span');
+    tag.className='rail-sold'; tag.textContent='Sold out';
+    document.getElementById('railBrand').after(tag);
+  }
   const btn = document.getElementById('navBtn');
   btn.addEventListener('click', e=>{ e.stopPropagation(); nav.classList.toggle('open'); });
   document.addEventListener('click', ()=>nav.classList.remove('open'));
