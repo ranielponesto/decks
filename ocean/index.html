@@ -2194,13 +2194,38 @@ async function loadStatus(){
   }catch(e){}
 }
 
-/* ---- admin: password 'gate' then per-project toggles; saving commits status.json
-       via the GitHub API using a token the admin pastes once (kept only in this browser). */
-async function sha256(t){const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
-  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
-const ADMIN_HASH = 'f0d588a225e6e6ba0501a3f787230abf579f6db2dd55be0fa3450f8acd54e6f3';
+/* ---- admin: the password is never stored or checked against anything in this page.
+       It is the encryption key for the GitHub token kept on the admin's own device
+       (PBKDF2 -> AES-GCM). Wrong password = token cannot be decrypted = nothing can
+       be published. Without the token, the panel cannot change anything for anyone. */
+const VAULT_KEY = 'deck-admin-vault';
+const enc = new TextEncoder(), dec = new TextDecoder();
+const b64e = b => btoa(String.fromCharCode(...new Uint8Array(b)));
+const b64d = t => Uint8Array.from(atob(t), c=>c.charCodeAt(0));
+async function deriveKey(pw, salt){
+  const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:310000, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function vaultStore(pw, token){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pw, salt);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(token));
+  try{ localStorage.setItem(VAULT_KEY, JSON.stringify({s:b64e(salt), i:b64e(iv), c:b64e(ct)})); }catch(e){}
+}
+async function vaultOpen(pw){
+  let raw = null; try{ raw = localStorage.getItem(VAULT_KEY); }catch(e){}
+  if(!raw) return {state:'empty'};
+  try{
+    const v = JSON.parse(raw);
+    const key = await deriveKey(pw, b64d(v.s));
+    const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64d(v.i)}, key, b64d(v.c));
+    return {state:'ok', token: dec.decode(pt)};
+  }catch(e){ return {state:'bad'}; }
+}
 
-function adminPanel(){
+function adminPanel(token){
   const st = p => (LIVE_STATUS && LIVE_STATUS[p.dir]) || p.status || 'live';
   const wrap = el(`<div class="admin-veil"><div class="admin">
     <h3>Project visibility</h3>
@@ -2211,6 +2236,7 @@ function adminPanel(){
         </select></div>`).join('')}
     <div class="admin-acts">
       <button class="ui a-save solid">Save for everyone</button>
+      <button class="ui a-forget">Forget this device</button>
       <button class="ui a-close">Close</button>
     </div>
     <p class="admin-note">Saving publishes via GitHub; changes appear on all devices within ~1 minute.</p>
@@ -2218,44 +2244,38 @@ function adminPanel(){
   document.body.appendChild(wrap);
   wrap.addEventListener('click', e=>{ if(e.target===wrap) wrap.remove(); });
   wrap.querySelector('.a-close').addEventListener('click', ()=>wrap.remove());
+  wrap.querySelector('.a-forget').addEventListener('click', ()=>{
+    try{ localStorage.removeItem(VAULT_KEY); }catch(e){}
+    wrap.remove(); toast('Admin access removed from this device');
+  });
   wrap.querySelector('.a-save').addEventListener('click', async ()=>{
     const next = {};
     wrap.querySelectorAll('select').forEach(s=>next[s.dataset.dir]=s.value);
-    let tok = null; try{ tok = localStorage.getItem('deck-admin-token'); }catch(e){}
-    if(!tok){
-      tok = prompt('Paste your GitHub token (stored only in this browser):');
-      if(!tok) return;
-      try{ localStorage.setItem('deck-admin-token', tok.trim()); }catch(e){}
-      tok = tok.trim();
-    }
     const api = `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.statusPath}`;
-    const hdrs = {'Authorization':'Bearer '+tok, 'Accept':'application/vnd.github+json'};
+    const hdrs = {'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json'};
     try{
       const cur = await (await fetch(api, {headers:hdrs})).json();
       const body = { message:'Update project visibility', content: btoa(JSON.stringify(next, null, 1)), sha: cur.sha };
       const r = await fetch(api, {method:'PUT', headers:hdrs, body: JSON.stringify(body)});
       if(!r.ok) throw new Error((await r.json()).message || r.status);
       LIVE_STATUS = next; renderNav(); wrap.remove(); toast('Saved — live everywhere in ~1 minute');
-    }catch(err){
-      try{ localStorage.removeItem('deck-admin-token'); }catch(e){}
-      alert('Could not save: ' + err.message + '\nToken cleared — try again with a valid token.');
-    }
+    }catch(err){ alert('Could not save: ' + err.message); }
   });
 }
+
 document.getElementById('adminBtn')?.addEventListener('click', async ()=>{
   const pw = prompt('Admin password:');
-  if(pw===null) return;
-  if(await sha256(pw) !== ADMIN_HASH){ toast('Wrong password'); return; }
-  adminPanel();
+  if(pw===null || pw==='') return;
+  const v = await vaultOpen(pw);
+  if(v.state==='ok'){ adminPanel(v.token); return; }
+  if(v.state==='bad'){ toast('Wrong password'); return; }
+  // first-time setup on this device
+  const token = prompt('First-time setup on this device.\nPaste your GitHub token (it will be encrypted with your password and stored only in this browser):');
+  if(!token) return;
+  await vaultStore(pw, token.trim());
+  toast('This device is now set up for admin');
+  adminPanel(token.trim());
 });
-
-(function(){
-  const nav = document.getElementById('siteNav');
-  const btn = document.getElementById('navBtn');
-  btn.addEventListener('click', e=>{ e.stopPropagation(); nav.classList.toggle('open'); });
-  document.addEventListener('click', ()=>nav.classList.remove('open'));
-})();
-renderNav(); loadStatus();
 
 /* ---------- dark mode ---------- */
 (function(){
