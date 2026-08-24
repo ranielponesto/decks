@@ -64,6 +64,14 @@ h1,h2,h3{font-family:"Archivo",system-ui,sans-serif;letter-spacing:-.02em}
 .nav-inline a.is-sold{opacity:.6}
 .rail-sold{flex:none;font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--c-reels);
   border:1px solid currentColor;border-radius:3px;padding:2px 6px}
+.admin-veil{position:fixed;inset:0;background:rgba(17,24,32,.5);z-index:120;display:grid;place-items:center}
+.admin{background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
+  padding:22px;min-width:320px;max-width:92vw;font-family:"IBM Plex Sans",system-ui,sans-serif}
+.admin h3{font-size:15px;margin-bottom:14px}
+.admin-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:14px}
+.admin-row select{font:inherit;padding:5px 8px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:var(--r)}
+.admin-acts{display:flex;gap:8px;margin-top:16px}
+.admin-note{margin-top:12px;font-size:11.5px;color:var(--muted)}
 
 /* ---------- dark theme ---------- */
 html[data-theme="dark"]{
@@ -448,6 +456,7 @@ td.when{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08e
     </div>
   </div>
   <span class="mid" id="railTitle"></span>
+  <button class="theme-btn" id="adminBtn" title="Admin">⚙</button>
   <button class="theme-btn" id="themeBtn" title="Toggle dark mode">◐</button>
   <span class="count"><span id="cNow">1</span> / <span id="cAll">1</span></span>
 </div>
@@ -1987,15 +1996,6 @@ function browseSlide(){
     <div class="eyebrow">${esc(CAMPAIGN.kicker||'Creatives')}</div>
     <h1>${esc(CAMPAIGN.project)} <em>creatives</em></h1>
     <p class="lede">${esc(CAMPAIGN.lede||'')}</p>
-    <div class="strip">
-      <div>Creative <b>${CREATIVES.length} total</b></div>
-      ${groups.map(t=>`<div>${esc(TYPES[t].label)} <b>${CREATIVES.filter(c=>c.type===t).length}</b></div>`).join('')}
-      ${pending?`<div>Awaiting asset <b style="color:var(--amber)">${pending}</b></div>`:''}
-      ${has(CAMPAIGN.objective)?`<div>Objective <b>${esc(CAMPAIGN.objective)}</b></div>`:''}
-      ${has(CAMPAIGN.destination)?`<div>Destination <b>${esc(CAMPAIGN.destination)}</b></div>`:''}
-      ${has(CAMPAIGN.flight)?`<div>Flight <b>${esc(CAMPAIGN.flight)}</b></div>`:''}
-      ${has(CAMPAIGN.owner)?`<div>By <b>${esc(CAMPAIGN.owner)}</b></div>`:''}
-    </div>
     ${has(CAMPAIGN.updated)||has(CAMPAIGN.created)?`<div class="stamp">
       ${has(CAMPAIGN.updated)?`Last updated <b>${esc(CAMPAIGN.updated)}</b>`:''}${has(CAMPAIGN.updated)&&has(CAMPAIGN.created)?' · ':''}${has(CAMPAIGN.created)?`Created <b>${esc(CAMPAIGN.created)}</b>`:''}
     </div>`:''}
@@ -2156,35 +2156,106 @@ function endSlide(){
 /* ---------- assemble ---------- */
 document.title = `${CAMPAIGN.project} — Creatives`;
 
-/* ---------- header project nav (only when served over http/https,
-     since the links are relative site paths) ---------- */
-(function(){
+/* ---------- runtime project status + admin toggle ---------- */
+const SITE = { owner:'ranielponesto', repo:'decks', statusPath:'status.json' };
+let LIVE_STATUS = null;
+
+function renderNav(){
   const nav = document.getElementById('siteNav');
   if(!CAMPAIGN.nav || !/^https?:$/.test(location.protocol)) return;
   nav.hidden = false;
   const menu = document.getElementById('navMenu');
   const here = location.pathname.replace(/index\.html$|full\.html$/,'');
+  const st = p => (LIVE_STATUS && LIVE_STATUS[p.dir]) || p.status || 'live';
   const links = [{label:'All projects', href: CAMPAIGN.nav.home||'../', cls:'', sold:false}];
   for(const p of (CAMPAIGN.nav.projects||[])){
-    if((p.status||'live')==='hidden') continue;
+    if(st(p)==='hidden') continue;
     const target = new URL(p.href, location.href).pathname;
-    links.push({label:p.label, href:p.href, cls: here===target?'on':'', sold:(p.status||'live')==='soldout'});
+    links.push({label:p.label, href:p.href, cls: here===target?'on':'', sold: st(p)==='soldout'});
   }
   const badge = l => l.sold ? ' <em class="sold-tag">Sold out</em>' : '';
   menu.innerHTML = links.map((l,i)=>`<a href="${esc(l.href)}" class="${l.cls}">${esc(l.label)}${badge(l)}</a>${i===0?'<div class="sep"></div>':''}`).join('');
   document.getElementById('navInline').innerHTML =
     links.map(l=>`<a href="${esc(l.href)}" class="${l.cls}${l.sold?' is-sold':''}">${esc(l.label)}${badge(l)}</a>`).join('');
-  // banner on the deck itself when this project is sold out
+  document.querySelector('.rail-sold')?.remove();
   const mine = (CAMPAIGN.nav.projects||[]).find(p=>new URL(p.href, location.href).pathname===here);
-  if(mine && mine.status==='soldout'){
+  if(mine && st(mine)==='soldout'){
     const tag = document.createElement('span');
     tag.className='rail-sold'; tag.textContent='Sold out';
     document.getElementById('railBrand').after(tag);
   }
+}
+
+async function loadStatus(){
+  if(!/^https?:$/.test(location.protocol)) return;
+  try{
+    const r = await fetch('../' + SITE.statusPath + '?t=' + Date.now(), {cache:'no-store'});
+    if(r.ok){ LIVE_STATUS = await r.json(); renderNav(); }
+  }catch(e){}
+}
+
+/* ---- admin: password 'gate' then per-project toggles; saving commits status.json
+       via the GitHub API using a token the admin pastes once (kept only in this browser). */
+async function sha256(t){const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+const ADMIN_HASH = 'f0d588a225e6e6ba0501a3f787230abf579f6db2dd55be0fa3450f8acd54e6f3';
+
+function adminPanel(){
+  const st = p => (LIVE_STATUS && LIVE_STATUS[p.dir]) || p.status || 'live';
+  const wrap = el(`<div class="admin-veil"><div class="admin">
+    <h3>Project visibility</h3>
+    ${(CAMPAIGN.nav.projects||[]).map(p=>`
+      <div class="admin-row"><span>${esc(p.label)}</span>
+        <select data-dir="${esc(p.dir)}">
+          ${['live','soldout','hidden'].map(v=>`<option value="${v}" ${st(p)===v?'selected':''}>${v==='live'?'Live':v==='soldout'?'Sold out':'Hidden'}</option>`).join('')}
+        </select></div>`).join('')}
+    <div class="admin-acts">
+      <button class="ui a-save solid">Save for everyone</button>
+      <button class="ui a-close">Close</button>
+    </div>
+    <p class="admin-note">Saving publishes via GitHub; changes appear on all devices within ~1 minute.</p>
+  </div></div>`);
+  document.body.appendChild(wrap);
+  wrap.addEventListener('click', e=>{ if(e.target===wrap) wrap.remove(); });
+  wrap.querySelector('.a-close').addEventListener('click', ()=>wrap.remove());
+  wrap.querySelector('.a-save').addEventListener('click', async ()=>{
+    const next = {};
+    wrap.querySelectorAll('select').forEach(s=>next[s.dataset.dir]=s.value);
+    let tok = null; try{ tok = localStorage.getItem('deck-admin-token'); }catch(e){}
+    if(!tok){
+      tok = prompt('Paste your GitHub token (stored only in this browser):');
+      if(!tok) return;
+      try{ localStorage.setItem('deck-admin-token', tok.trim()); }catch(e){}
+      tok = tok.trim();
+    }
+    const api = `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.statusPath}`;
+    const hdrs = {'Authorization':'Bearer '+tok, 'Accept':'application/vnd.github+json'};
+    try{
+      const cur = await (await fetch(api, {headers:hdrs})).json();
+      const body = { message:'Update project visibility', content: btoa(JSON.stringify(next, null, 1)), sha: cur.sha };
+      const r = await fetch(api, {method:'PUT', headers:hdrs, body: JSON.stringify(body)});
+      if(!r.ok) throw new Error((await r.json()).message || r.status);
+      LIVE_STATUS = next; renderNav(); wrap.remove(); toast('Saved — live everywhere in ~1 minute');
+    }catch(err){
+      try{ localStorage.removeItem('deck-admin-token'); }catch(e){}
+      alert('Could not save: ' + err.message + '\nToken cleared — try again with a valid token.');
+    }
+  });
+}
+document.getElementById('adminBtn')?.addEventListener('click', async ()=>{
+  const pw = prompt('Admin password:');
+  if(pw===null) return;
+  if(await sha256(pw) !== ADMIN_HASH){ toast('Wrong password'); return; }
+  adminPanel();
+});
+
+(function(){
+  const nav = document.getElementById('siteNav');
   const btn = document.getElementById('navBtn');
   btn.addEventListener('click', e=>{ e.stopPropagation(); nav.classList.toggle('open'); });
   document.addEventListener('click', ()=>nav.classList.remove('open'));
 })();
+renderNav(); loadStatus();
 
 /* ---------- dark mode ---------- */
 (function(){
