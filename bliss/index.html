@@ -34,6 +34,36 @@ h1,h2,h3{font-family:"Archivo",system-ui,sans-serif;letter-spacing:-.02em}
 .rail .count{color:var(--ink);font-weight:600}
 .rail .hide-s{display:inline}
 .progress{position:fixed;top:45px;left:0;height:2px;background:var(--accent);z-index:61;transition:width .3s ease,background .3s}
+
+/* ---------- header project nav + theme toggle ---------- */
+.rail .nav{position:relative;flex:none}
+.nav-btn,.theme-btn{font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--ink-2);
+  background:transparent;border:1px solid var(--line);border-radius:var(--r);padding:4px 10px;cursor:pointer}
+.nav-btn:hover,.theme-btn:hover{color:var(--ink);border-color:var(--muted)}
+.theme-btn{flex:none;font-size:13px;line-height:1;padding:3px 8px}
+.nav-menu{display:none;position:absolute;top:calc(100% + 8px);left:0;min-width:220px;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:6px;z-index:70;text-transform:none;letter-spacing:0}
+.nav.open .nav-menu{display:block}
+.nav-menu a{display:block;padding:9px 12px;border-radius:var(--r);color:var(--ink);text-decoration:none;
+  font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:13.5px}
+.nav-menu a:hover{background:var(--paper)}
+.nav-menu a.on{color:var(--accent);font-weight:600}
+.nav-menu .sep{height:1px;background:var(--line-soft);margin:5px 4px}
+
+/* ---------- dark theme ---------- */
+html[data-theme="dark"]{
+  --paper:#14181D; --paper-2:#1B2026; --card:#1F252C;
+  --ink:#E8ECF1; --ink-2:#C0C9D2; --muted:#8B96A1;
+  --line:#333C46; --line-soft:#272E36;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.5);
+}
+html[data-theme="dark"] .rail{background:rgba(20,24,29,.88)}
+html[data-theme="dark"] .doc-stage{background:#0F1317}
+html[data-theme="dark"] .doc:fullscreen{background:#0F1317}
+html[data-theme="dark"] .doc-stage img{box-shadow:0 2px 14px rgba(0,0,0,.6)}
+html[data-theme="dark"] .bar{background:rgba(20,24,29,.9);border-top:1px solid var(--line)}
+html[data-theme="dark"] .ui{background:var(--card);color:var(--ink);border-color:var(--line)}
+html[data-theme="dark"] .ui.solid{background:var(--ink);color:var(--paper)}
 .stage{position:absolute;inset:46px 0 44px;overflow:hidden}
 .slide{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:34px 44px 40px;
   opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .32s ease,transform .32s ease,visibility .32s}
@@ -395,7 +425,12 @@ td.when{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08e
   <span class="dot" id="railDot"></span>
   <span class="brand" id="railBrand"></span>
   <span class="hide-s">Creatives</span>
+  <div class="nav" id="siteNav" hidden>
+    <button class="nav-btn" id="navBtn">Projects ▾</button>
+    <div class="nav-menu" id="navMenu"></div>
+  </div>
   <span class="mid" id="railTitle"></span>
+  <button class="theme-btn" id="themeBtn" title="Toggle dark mode">◐</button>
   <span class="count"><span id="cNow">1</span> / <span id="cAll">1</span></span>
 </div>
 <div class="progress" id="prog" style="width:0"></div>
@@ -434,7 +469,20 @@ const CAMPAIGN = {
     "Review point set and a CPL ceiling agreed"
   ],
   "created": "24 Aug 2026",
-  "updated": "24 Aug 2026"
+  "updated": "24 Aug 2026",
+  "nav": {
+    "home": "../",
+    "projects": [
+      {
+        "label": "Bliss Villas",
+        "href": "../bliss/"
+      },
+      {
+        "label": "The Ocean Residences",
+        "href": "../ocean/"
+      }
+    ]
+  }
 };
 const CREATIVES = [
  {
@@ -1696,6 +1744,35 @@ function endSlide(){
 
 /* ---------- assemble ---------- */
 document.title = `${CAMPAIGN.project} — Creatives`;
+
+/* ---------- header project nav (only when served over http/https,
+     since the links are relative site paths) ---------- */
+(function(){
+  const nav = document.getElementById('siteNav');
+  if(!CAMPAIGN.nav || !/^https?:$/.test(location.protocol)) return;
+  nav.hidden = false;
+  const menu = document.getElementById('navMenu');
+  const here = location.pathname.replace(/index\.html$|full\.html$/,'');
+  let html = `<a href="${esc(CAMPAIGN.nav.home||'../')}">All projects</a><div class="sep"></div>`;
+  for(const p of (CAMPAIGN.nav.projects||[])){
+    const target = new URL(p.href, location.href).pathname;
+    html += `<a href="${esc(p.href)}" class="${here===target?'on':''}">${esc(p.label)}</a>`;
+  }
+  menu.innerHTML = html;
+  const btn = document.getElementById('navBtn');
+  btn.addEventListener('click', e=>{ e.stopPropagation(); nav.classList.toggle('open'); });
+  document.addEventListener('click', ()=>nav.classList.remove('open'));
+})();
+
+/* ---------- dark mode ---------- */
+(function(){
+  const btn = document.getElementById('themeBtn');
+  const get = ()=>{ try { return localStorage.getItem('deck-theme'); } catch(e){ return null; } };
+  const store = v=>{ try { localStorage.setItem('deck-theme', v); } catch(e){} };
+  const apply = v=>{ document.documentElement.dataset.theme = v; btn.textContent = v==='dark' ? '☀' : '◐'; };
+  apply(get() || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  btn.addEventListener('click', ()=>{ const v = document.documentElement.dataset.theme==='dark' ? 'light' : 'dark'; apply(v); store(v); });
+})();
 document.getElementById('railBrand').textContent = CAMPAIGN.page || CAMPAIGN.project || '';
 
 const stage=document.getElementById('stage'), slides=[];
