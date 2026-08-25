@@ -496,7 +496,7 @@ const CAMPAIGN = {
     "Review point set and a CPL ceiling agreed"
   ],
   "created": "24 Aug 2026",
-  "updated": "24 Aug 2026",
+  "updated": "25 Aug 2026",
   "nav": {
     "home": "../",
     "projects": [
@@ -2264,14 +2264,24 @@ function adminPanel(token){
 }
 
 document.getElementById('adminBtn')?.addEventListener('click', async ()=>{
-  const pw = prompt('Admin password:');
-  if(pw===null || pw==='') return;
+  let pw = prompt('Admin password:');
+  if(pw===null) return;
+  pw = pw.trim();
+  if(pw==='') return;
   const v = await vaultOpen(pw);
   if(v.state==='ok'){ adminPanel(v.token); return; }
-  if(v.state==='bad'){ toast('Wrong password'); return; }
+  if(v.state==='bad'){
+    // locked vault on this device — offer a reset so a forgotten/mistyped setup
+    // password can never lock the admin out permanently
+    if(confirm('Wrong password.\n\nReset admin access on this device? Your stored token will be wiped and you can set up again with your password and GitHub token.')){
+      try{ localStorage.removeItem(VAULT_KEY); }catch(e){}
+      toast('Reset done — tap the gear again to set up');
+    }
+    return;
+  }
   // first-time setup on this device
   const token = prompt('First-time setup on this device.\nPaste your GitHub token (it will be encrypted with your password and stored only in this browser):');
-  if(!token) return;
+  if(!token || !token.trim()) return;
   await vaultStore(pw, token.trim());
   toast('This device is now set up for admin');
   adminPanel(token.trim());
