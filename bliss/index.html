@@ -2002,9 +2002,10 @@ function add(node,id){ if(!node) return; if(id) node.dataset.cid=id; stage.appen
 
 add(browseSlide());
 ORDER.forEach(t=>CREATIVES.filter(c=>c.type===t).forEach(c=>add(creativeSlide(c), c.id)));
-add(matrixSlide());
+/* Copy matrix only earns a slide when at least one creative carries ad copy;
+   finished-artwork decks (copy baked into the design) skip it. */
+if(CREATIVES.some(c=>has(c.primary)||has(c.headline)||has(c.description))) add(matrixSlide());
 add(flagsSlide());
-add(endSlide());
 
 let cur=0, lastId=null;
 const cNow=document.getElementById('cNow'), cAll=document.getElementById('cAll'),
