@@ -2287,6 +2287,15 @@ document.getElementById('adminBtn')?.addEventListener('click', async ()=>{
   adminPanel(token.trim());
 });
 
+/* ---------- boot the header nav ---------- */
+(function(){
+  const nav = document.getElementById('siteNav');
+  const btn = document.getElementById('navBtn');
+  btn.addEventListener('click', e=>{ e.stopPropagation(); nav.classList.toggle('open'); });
+  document.addEventListener('click', ()=>nav.classList.remove('open'));
+})();
+renderNav(); loadStatus();
+
 /* ---------- dark mode ---------- */
 (function(){
   const btn = document.getElementById('themeBtn');
