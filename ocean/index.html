@@ -2035,6 +2035,9 @@ function browseSlide(){
   const s = el(`<section class="slide"><div class="browse">
     <div class="eyebrow">${esc(CAMPAIGN.kicker||'Creatives')}</div>
     <h1>${esc(CAMPAIGN.project)} <em>creatives</em></h1>
+    ${has(CAMPAIGN.mapUrl)?`<a class="maplink" href="${esc(CAMPAIGN.mapUrl)}" target="_blank" rel="noopener">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      View location on Google Maps</a>`:''}
     <p class="lede">${esc(CAMPAIGN.lede||'')}</p>
     ${has(CAMPAIGN.updated)||has(CAMPAIGN.created)?`<div class="stamp">
       ${has(CAMPAIGN.updated)?`Last updated <b>${esc(CAMPAIGN.updated)}</b>`:''}${has(CAMPAIGN.updated)&&has(CAMPAIGN.created)?' · ':''}${has(CAMPAIGN.created)?`Created <b>${esc(CAMPAIGN.created)}</b>`:''}
