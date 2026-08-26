@@ -2004,7 +2004,7 @@ add(browseSlide());
 ORDER.forEach(t=>CREATIVES.filter(c=>c.type===t).forEach(c=>add(creativeSlide(c), c.id)));
 /* Copy matrix only earns a slide when at least one creative carries ad copy;
    finished-artwork decks (copy baked into the design) skip it. */
-if(CREATIVES.some(c=>has(c.primary)||has(c.headline)||has(c.description))) add(matrixSlide());
+if(CREATIVES.some(c=>!['brochure','gallery'].includes(c.type) && (has(c.primary)||has(c.headline)||has(c.description)))) add(matrixSlide());
 add(flagsSlide());
 
 let cur=0, lastId=null;
