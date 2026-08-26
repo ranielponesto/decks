@@ -314,6 +314,10 @@ td.fm{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;t
 .docfull .frame-spec{display:none}
 .bmeta{max-width:1360px;margin:18px auto 0;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;
   border-top:1px solid var(--line);padding-top:18px}
+.maplink{display:inline-flex;align-items:center;gap:7px;margin:2px 0 14px;padding:7px 13px;
+  border:1px solid var(--line);border-radius:999px;color:var(--ink-2);text-decoration:none;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.maplink:hover{color:var(--accent);border-color:var(--accent)}
 .bmeta-r{display:flex;flex-direction:column;gap:8px;flex:none;width:200px}
 .bmeta-r button{width:100%}
 
@@ -520,13 +524,13 @@ const CAMPAIGN = {
     "Review point set and a CPL ceiling agreed"
   ],
   "created": "24 Aug 2026",
-  "updated": "25 Aug 2026",
+  "updated": "26 Aug 2026",
   "nav": {
     "home": "../",
     "projects": [
       {
         "slug": "bliss-villas-huzoom-lusail",
-        "label": "Bliss Villas",
+        "label": "Bliss Villas Huzoom Lusail",
         "href": "../bliss/",
         "dir": "bliss",
         "blurb": "Brochure · 4 photo ads · 3 reels (EN + AR) · 31-photo gallery",
@@ -534,10 +538,10 @@ const CAMPAIGN = {
       },
       {
         "slug": "the-ocean-residences",
-        "label": "The Ocean Residences",
+        "label": "The Ocean Villas",
         "href": "../ocean/",
         "dir": "ocean",
-        "blurb": "Brochure · 17 photo ads (EN + AR) · 2 launch films · 40-photo gallery",
+        "blurb": "Brochure · 17 photo ads (EN + AR) · 2 launch films · 25-photo enhanced gallery",
         "status": "live"
       }
     ]
@@ -1040,10 +1044,13 @@ const GALLERY_CATS = [
   { key:'facade',    label:'Facade'     },
   { key:'pool',      label:'Pool'       },
   { key:'garden',    label:'Garden'     },
-  { key:'amenities', label:'Amenities'  },
+  { key:'majlis',    label:'Majlis'     },
   { key:'living',    label:'Living room'},
+  { key:'kitchen',   label:'Kitchen'    },
   { key:'bedroom',   label:'Bedroom'    },
   { key:'bathroom',  label:'Bathroom'   },
+  { key:'stairs',    label:'Stairs'     },
+  { key:'amenities', label:'Amenities'  },
   { key:'balcony',   label:'Balcony'    }
 ];
 
@@ -1685,6 +1692,9 @@ function browseSlide(){
   const s = el(`<section class="slide"><div class="browse">
     <div class="eyebrow">${esc(CAMPAIGN.kicker||'Creatives')}</div>
     <h1>${esc(CAMPAIGN.project)} <em>creatives</em></h1>
+    ${has(CAMPAIGN.mapUrl)?`<a class="maplink" href="${esc(CAMPAIGN.mapUrl)}" target="_blank" rel="noopener">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      View location on Google Maps</a>`:''}
     <p class="lede">${esc(CAMPAIGN.lede||'')}</p>
     ${has(CAMPAIGN.updated)||has(CAMPAIGN.created)?`<div class="stamp">
       ${has(CAMPAIGN.updated)?`Last updated <b>${esc(CAMPAIGN.updated)}</b>`:''}${has(CAMPAIGN.updated)&&has(CAMPAIGN.created)?' · ':''}${has(CAMPAIGN.created)?`Created <b>${esc(CAMPAIGN.created)}</b>`:''}
