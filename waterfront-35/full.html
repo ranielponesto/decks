@@ -79,6 +79,41 @@ html[data-theme="dark"] .rail .logo .logo-d{display:block}
 .admin-acts{display:flex;gap:8px;margin-top:16px}
 .admin-note{margin-top:12px;font-size:11.5px;color:var(--muted)}
 
+/* ---------- review comments ---------- */
+.fb-fab{position:fixed;right:18px;bottom:58px;z-index:80;display:none;align-items:center;gap:8px;
+  background:var(--brand-navy);color:#fff;border:0;border-radius:999px;padding:10px 16px;cursor:pointer;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.07em;text-transform:uppercase;box-shadow:var(--shadow)}
+.fb-fab.show{display:flex}
+.fb-fab b{background:#fff;color:var(--brand-navy);border-radius:999px;padding:1px 7px;font-size:10px}
+.cmt-veil{position:fixed;inset:0;background:rgba(3,29,40,.5);z-index:120;display:grid;place-items:center;padding:16px}
+.cmt{background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
+  padding:20px;width:520px;max-width:94vw;max-height:84vh;overflow:auto;font-family:"IBM Plex Sans",system-ui,sans-serif}
+.cmt h3{font-size:15px;margin-bottom:2px}
+.cmt .sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+.cmt textarea{width:100%;min-height:84px;padding:10px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--paper);color:var(--ink);font:inherit;font-size:13.5px;resize:vertical}
+.cmt .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.cmt .note{border-top:1px solid var(--line-soft);padding:10px 0;font-size:13.5px}
+.cmt .note .who{font-size:11px;color:var(--muted);margin-bottom:3px;display:flex;justify-content:space-between;gap:10px}
+.cmt .note .del{cursor:pointer;color:var(--c-reels);background:none;border:0;font-size:11px;padding:0}
+.cmt .byc{font-size:12px;color:var(--muted);margin:8px 0 2px;letter-spacing:.05em;text-transform:uppercase}
+.fbsec{max-width:1360px;margin:18px auto 0;border-top:1px solid var(--line);padding-top:14px;
+  font-family:"IBM Plex Sans",system-ui,sans-serif}
+.fbsec .fb-h{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px}
+.fbsec .fb-h b{color:var(--accent)}
+.fbsec .note{border-bottom:1px solid var(--line-soft);padding:9px 0;font-size:13.5px}
+.fbsec .note .who{font-size:11px;color:var(--muted);margin-bottom:2px;display:flex;justify-content:space-between;gap:10px}
+.fbsec .note .del{cursor:pointer;color:var(--c-reels);background:none;border:0;font-size:11px;padding:0}
+.fbsec .fb-add{display:flex;gap:8px;margin-top:10px;align-items:flex-start}
+.fbsec textarea{flex:1;min-height:44px;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--card);color:var(--ink);font:inherit;font-size:13.5px;resize:vertical}
+.fbsec .panelw{max-width:none;margin:0}
+.panel .fbsec{margin-top:16px}
+.has-notes{position:relative}
+.has-notes::after{content:attr(data-n);position:absolute;top:-7px;right:-7px;background:var(--c-reels);color:#fff;
+  border-radius:999px;font-size:9px;line-height:1;padding:3px 6px;font-family:"IBM Plex Mono",monospace}
+
 /* ---------- dark theme ---------- */
 html[data-theme="dark"]{
   --paper:#04222E; --paper-2:#062B3A; --card:#0A3345;
@@ -497,6 +532,7 @@ td.when{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08e
   <button class="ui solid" id="bNext">Next →</button>
 </div>
 
+<button class="fb-fab" id="fbFab">Feedback <b>0</b></button>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -518,7 +554,7 @@ const CAMPAIGN = {
   "endLede": "",
   "checklist": [],
   "created": "26 Aug 2026",
-  "updated": "27 Aug 2026",
+  "updated": "29 Aug 2026",
   "nav": {
     "home": "../",
     "projects": [
@@ -1233,7 +1269,7 @@ function gallerySlide(c){
     toast(`Downloading ${photos.filter(x=>has(x.src)).length} photos`);
   });
 
-  s.append(head, wall, lb);
+  s.append(head, wall, feedbackSection(c), lb);
   s.dataset.title = `${c.id} — ${c.name||''}`;
   s.dataset.type  = c.type;
   return s;
@@ -1440,6 +1476,7 @@ function creativeSlide(c){
     </div>
   </div>`);
 
+  panel.appendChild(feedbackSection(c));
   panel.querySelector('.copy')?.addEventListener('click', ()=>{
     const lines = [`Primary text:\n${c.primary||''}`,`Headline:\n${c.headline||''}`,
                    `Description:\n${c.description||''}`,`CTA: ${c.cta||''}`];
@@ -1508,6 +1545,7 @@ function brochureSlide(c){
 
   meta.querySelector('.gohome').addEventListener('click', goHome);
   meta.querySelector('.gofull').addEventListener('click', ()=>toggleViewerFullscreen(s));
+  meta.appendChild(feedbackSection(c));
 
   let curPage = 0;
   preview.addEventListener('card', e=>{ curPage = e.detail; });
@@ -1826,6 +1864,137 @@ document.getElementById('adminBtn')?.addEventListener('click', async ()=>{
 });
 
 /* ---------- boot the header nav ---------- */
+
+/* ---------- review comments (saved on the reviewer's device; sent via WhatsApp/copy) ---------- */
+const NOTES_KEY = 'deck-notes:' + (CAMPAIGN.handle || CAMPAIGN.project);
+function notesLoad(){ try{ return JSON.parse(localStorage.getItem(NOTES_KEY)||'{}'); }catch(e){ return {}; } }
+function notesSave(n){ try{ localStorage.setItem(NOTES_KEY, JSON.stringify(n)); }catch(e){} updateFab(); }
+function reviewer(){
+  let r=null; try{ r = localStorage.getItem('deck-reviewer'); }catch(e){}
+  if(!r){ r = prompt('Your name (shown with your comments):') || 'Reviewer';
+    try{ localStorage.setItem('deck-reviewer', r); }catch(e){} }
+  return r;
+}
+function noteCount(){ const n=notesLoad(); return Object.values(n).reduce((a,v)=>a+v.length,0); }
+function updateFab(){
+  const f=document.getElementById('fbFab'); const c=noteCount();
+  f.classList.toggle('show', c>0); f.querySelector('b').textContent=c;
+  // badges on browse cards
+  document.querySelectorAll('#grids [data-go]').forEach(el=>{
+    const k=(notesLoad()[el.dataset.go]||[]).length;
+    el.classList.toggle('has-notes', k>0); if(k) el.dataset.n=k; else el.removeAttribute('data-n');
+  });
+}
+function feedbackSection(c){
+  const sec = el(`<div class="fbsec">
+    <div class="fb-h">Feedback <b class="n"></b></div>
+    <div class="list"></div>
+    <div class="fb-add">
+      <textarea placeholder="Write feedback for ${esc(c.id)}…" dir="auto"></textarea>
+      <button class="ui solid f-add">Add</button>
+    </div>
+  </div>`);
+  const list = sec.querySelector('.list');
+  function render(){
+    const arr = notesLoad()[c.id]||[];
+    sec.querySelector('.n').textContent = arr.length ? '· '+arr.length : '';
+    list.innerHTML = arr.map((n,i)=>`<div class="note">
+      <div class="who"><span>${esc(n.by)} · ${esc(n.at)}</span><button class="del" data-i="${i}">delete</button></div>
+      <div dir="auto">${esc(n.text)}</div></div>`).join('');
+    list.querySelectorAll('.del').forEach(b=>b.addEventListener('click', ()=>{
+      const nn=notesLoad(); nn[c.id].splice(+b.dataset.i,1); if(!nn[c.id].length) delete nn[c.id];
+      notesSave(nn); render();
+    }));
+  }
+  render();
+  sec.querySelector('.f-add').addEventListener('click', ()=>{
+    const ta = sec.querySelector('textarea'); const t = ta.value.trim(); if(!t) return;
+    const nn = notesLoad();
+    (nn[c.id] = nn[c.id]||[]).push({text:t, by:reviewer(), at:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})});
+    notesSave(nn); ta.value=''; render(); toast('Feedback saved on this device');
+  });
+  return sec;
+}
+function openComments(c){
+  const notes = notesLoad();
+  const veil = el(`<div class="cmt-veil"><div class="cmt">
+    <h3>Comments — ${esc(c.id)}</h3>
+    <div class="sub">${esc(c.name)}</div>
+    <div class="list"></div>
+    <textarea placeholder="Write feedback for this creative…"></textarea>
+    <div class="row">
+      <button class="ui solid c-add">Add comment</button>
+      <button class="ui c-close">Close</button>
+    </div>
+  </div></div>`);
+  const list = veil.querySelector('.list');
+  function render(){
+    const arr = notesLoad()[c.id]||[];
+    list.innerHTML = arr.map((n,i)=>`<div class="note">
+      <div class="who"><span>${esc(n.by)} · ${esc(n.at)}</span><button class="del" data-i="${i}">delete</button></div>
+      <div dir="auto">${esc(n.text)}</div></div>`).join('') || '<div class="sub" style="padding:8px 0">No comments yet.</div>';
+    list.querySelectorAll('.del').forEach(b=>b.addEventListener('click', ()=>{
+      const nn=notesLoad(); nn[c.id].splice(+b.dataset.i,1); if(!nn[c.id].length) delete nn[c.id];
+      notesSave(nn); render();
+    }));
+  }
+  render();
+  veil.addEventListener('click', e=>{ if(e.target===veil) veil.remove(); });
+  veil.querySelector('.c-close').addEventListener('click', ()=>veil.remove());
+  veil.querySelector('.c-add').addEventListener('click', ()=>{
+    const t = veil.querySelector('textarea').value.trim(); if(!t) return;
+    const nn = notesLoad();
+    (nn[c.id] = nn[c.id]||[]).push({text:t, by:reviewer(), at:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})});
+    notesSave(nn); veil.querySelector('textarea').value=''; render(); toast('Comment saved on this device');
+  });
+  document.body.appendChild(veil);
+  veil.querySelector('textarea').focus();
+}
+function feedbackText(){
+  const n = notesLoad();
+  let out = `Feedback — ${CAMPAIGN.project} creatives\n${location.href.split('#')[0]}\n`;
+  for(const cid of Object.keys(n)){
+    const c = CREATIVES.find(x=>x.id===cid);
+    out += `\n■ ${cid}${c?' — '+c.name:''}\n`;
+    for(const note of n[cid]) out += `  • ${note.text}  (${note.by}, ${note.at})\n`;
+  }
+  return out;
+}
+function openFeedback(){
+  const veil = el(`<div class="cmt-veil"><div class="cmt">
+    <h3>All feedback <span class="count">· ${noteCount()} comment${noteCount()===1?'':'s'}</span></h3>
+    <div class="sub">Collected on this device. Send them to the team:</div>
+    <div class="list"></div>
+    <div class="row">
+      <button class="ui solid f-wa">Send via WhatsApp</button>
+      <button class="ui f-copy">Copy all</button>
+      <button class="ui f-clear">Clear all</button>
+      <button class="ui c-close">Close</button>
+    </div>
+  </div></div>`);
+  const n = notesLoad();
+  veil.querySelector('.list').innerHTML = Object.keys(n).map(cid=>{
+    const c=CREATIVES.find(x=>x.id===cid);
+    return `<div class="byc">${esc(cid)}${c?' — '+esc(c.name):''}</div>` +
+      n[cid].map(x=>`<div class="note"><div class="who"><span>${esc(x.by)} · ${esc(x.at)}</span></div><div dir="auto">${esc(x.text)}</div></div>`).join('');
+  }).join('');
+  veil.addEventListener('click', e=>{ if(e.target===veil) veil.remove(); });
+  veil.querySelector('.c-close').addEventListener('click', ()=>veil.remove());
+  veil.querySelector('.f-wa').addEventListener('click', ()=>{
+    window.open('https://wa.me/?text='+encodeURIComponent(feedbackText()), '_blank');
+  });
+  veil.querySelector('.f-copy').addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(feedbackText()); toast('Copied'); }
+    catch(e){ prompt('Copy the feedback:', feedbackText()); }
+  });
+  veil.querySelector('.f-clear').addEventListener('click', ()=>{
+    if(confirm('Delete all comments saved on this device?')){ notesSave({}); veil.remove(); }
+  });
+  document.body.appendChild(veil);
+}
+document.getElementById('fbFab').addEventListener('click', openFeedback);
+updateFab();
+
 (function(){
   const nav = document.getElementById('siteNav');
   const btn = document.getElementById('navBtn');
@@ -1854,6 +2023,7 @@ ORDER.forEach(t=>CREATIVES.filter(c=>c.type===t).forEach(c=>add(creativeSlide(c)
    finished-artwork decks (copy baked into the design) skip it. */
 if(CREATIVES.some(c=>!['brochure','gallery'].includes(c.type) && (has(c.primary)||has(c.headline)||has(c.description)))) add(matrixSlide());
 add(flagsSlide());
+updateFab();  /* badge browse cards now that the grid exists */
 
 let cur=0, lastId=null;
 const cNow=document.getElementById('cNow'), cAll=document.getElementById('cAll'),
