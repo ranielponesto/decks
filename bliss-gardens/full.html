@@ -599,7 +599,8 @@ const CAMPAIGN = {
         "status": "live"
       }
     ]
-  }
+  },
+  "adUrl": "https://www.capstoneproperty.com/properties/property/5-bedroom-villa-for-sale-in-new-salata-salata-doha-cap-8132"
 };
 const CREATIVES = [
  {
@@ -1543,7 +1544,9 @@ function browseSlide(){
     <h1>${esc(CAMPAIGN.project)} <em>creatives</em></h1>
     ${has(CAMPAIGN.mapUrl)?`<a class="maplink" href="${esc(CAMPAIGN.mapUrl)}" target="_blank" rel="noopener">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-      View location on Google Maps</a>`:''}
+      View location on Google Maps</a>`:''}${has(CAMPAIGN.adUrl)?`<a class="maplink" href="${esc(CAMPAIGN.adUrl)}" target="_blank" rel="noopener">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+      View listing page</a>`:''}
     <p class="lede">${esc(CAMPAIGN.lede||'')}</p>
     ${has(CAMPAIGN.updated)||has(CAMPAIGN.created)?`<div class="stamp">
       ${has(CAMPAIGN.updated)?`Last updated <b>${esc(CAMPAIGN.updated)}</b>`:''}${has(CAMPAIGN.updated)&&has(CAMPAIGN.created)?' · ':''}${has(CAMPAIGN.created)?`Created <b>${esc(CAMPAIGN.created)}</b>`:''}
