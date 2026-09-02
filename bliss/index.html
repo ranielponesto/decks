@@ -567,7 +567,7 @@ const CAMPAIGN = {
     "Review point set and a CPL ceiling agreed"
   ],
   "created": "24 Aug 2026",
-  "updated": "1 Sep 2026",
+  "updated": "2 Sep 2026",
   "nav": {
     "home": "../",
     "projects": [
@@ -601,6 +601,14 @@ const CAMPAIGN = {
         "href": "../bliss-gardens/",
         "dir": "bliss-gardens",
         "blurb": "Brochure · 2 photo ads (EN + AR)",
+        "status": "live"
+      },
+      {
+        "slug": "bliss-gardens-muraikh",
+        "label": "Bliss Gardens Muraikh",
+        "href": "../bliss-gardens-muraikh/",
+        "dir": "bliss-gardens-muraikh",
+        "blurb": "Brochure · 5 reels · Construction update",
         "status": "live"
       }
     ]
@@ -1095,9 +1103,10 @@ const TYPES = {
   reels:    { label:'Reels',    long:'Reels / Video',  col:'var(--c-reels)'    },
   story:    { label:'Story',    long:'Story',          col:'var(--c-story)'    },
   brochure: { label:'Brochure', long:'Brochure',       col:'var(--c-brochure)' },
-  gallery:  { label:'Gallery',  long:'Photo gallery',  col:'var(--c-gallery)'  }
+  gallery:  { label:'Gallery',  long:'Photo gallery',  col:'var(--c-gallery)'  },
+  construction: { label:'Construction', long:'Construction update', col:'var(--c-story)' }
 };
-const ORDER  = ['brochure','photo','carousel','reels','story','gallery'];
+const ORDER  = ['brochure','photo','carousel','reels','story','construction','gallery'];
 const SPEC   = { '4:5':'1080 × 1350', '1:1':'1080 × 1080', '9:16':'1080 × 1920', '16:9':'1920 × 1080' };
 const LIMITS = { primary:125, headline:40, description:30 };
 /* canonical category order for the photo gallery — sections render in this
@@ -1121,7 +1130,7 @@ const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>'
 const el  = h => { const t=document.createElement('template'); t.innerHTML=h.trim(); return t.content.firstElementChild; };
 const has = v => v && String(v).trim().length>0;
 const T   = c => TYPES[c.type] || TYPES.photo;
-const isVid = c => c.type==='reels' || (c.type==='story' && has(c.src) && String(c.src).startsWith('data:video'));
+const isVid = c => c.type==='reels' || c.type==='construction' || (c.type==='story' && has(c.src) && String(c.src).startsWith('data:video'));
 
 const ICONS = {
   heart:'<svg viewBox="0 0 24 24"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1l8.8 8.8 8.8-8.8a5 5 0 0 0 0-7.1z"/></svg>',
@@ -1540,7 +1549,7 @@ function feedPreview(c){
 
 /* story + reels share the 9:16 frame, differing in chrome */
 function vertPreview(c, s){
-  const col = T(c).col, reels = c.type==='reels';
+  const col = T(c).col, reels = c.type==='reels' || c.type==='construction';
   const wrap = el(`<div>
     <div class="vert ${reels?'reels':''}">
       ${reels?'':`<div class="lines"><i></i><i></i><i></i></div>
@@ -1601,16 +1610,17 @@ function creativeSlide(c){
   const tall = c.ratio==='9:16';
   const s = el(`<section class="slide" style="--accent:${col}"></section>`);
   const wrap = el(`<div class="ad-layout ${tall?'tall':''}"></div>`);
-  const preview = (c.type==='reels'||c.type==='story') ? vertPreview(c,s) : feedPreview(c);
+  const preview = (c.type==='reels'||c.type==='story'||c.type==='construction') ? vertPreview(c,s) : feedPreview(c);
 
   const cards = c.type==='carousel' ? (c.cards&&c.cards.length?c.cards:[]) : [];
-  const video = c.type==='reels' || c.type==='story';
+  const video = c.type==='reels' || c.type==='story' || c.type==='construction';
 
   /* Finished client artwork carries its copy baked into the design, so a
      creative with no ad-copy fields renders "clean": just the design and a
      Download action — no caption mock, no copy counters, no file name. */
-  const CLEAN = !cards.length && !has(c.primary) && !has(c.headline) && !has(c.description)
-                && !has(c.hook) && !has(c.onscreen) && !has(c.audio);
+  const cardsHaveCopy = cards.some(cd => has(cd.primary)||has(cd.headline)||has(cd.description));
+  const CLEAN = !has(c.primary) && !has(c.headline) && !has(c.description)
+                && !has(c.hook) && !has(c.onscreen) && !has(c.audio) && !cardsHaveCopy;
   if(CLEAN){
     preview.querySelector('.ig-cap')?.remove();
     preview.querySelector('.cta-bar')?.remove();
@@ -1623,6 +1633,7 @@ function creativeSlide(c){
     <h2 dir="auto">${esc(c.name)}</h2>
     <div class="acts">
       ${has(c.src)?'<button class="ui solid download">Download</button>':''}
+      ${cards.length?'<button class="ui solid dlcards">Download</button>':''}
       <button class="ui gohome">All creatives</button>
     </div>
   </div>`) : el(`<div class="panel">
@@ -1678,6 +1689,10 @@ function creativeSlide(c){
     </div>
   </div>`);
 
+  panel.querySelector('.dlcards')?.addEventListener('click', ()=>{
+    (c.cards||[]).forEach((cd,i)=>{ if(has(cd.src)) setTimeout(()=>downloadAsset(cd.src, `${c.id}-slide-${i+1}.png`), i*180); });
+    toast('Downloading slides');
+  });
   panel.appendChild(feedbackSection(c));
   panel.querySelector('.copy')?.addEventListener('click', ()=>{
     const lines = [`Primary text:\n${c.primary||''}`,`Headline:\n${c.headline||''}`,
@@ -1772,7 +1787,9 @@ function browseSlide(){
     <h1>${esc(CAMPAIGN.project)} <em>creatives</em></h1>
     ${has(CAMPAIGN.mapUrl)?`<a class="maplink" href="${esc(CAMPAIGN.mapUrl)}" target="_blank" rel="noopener">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-      View location on Google Maps</a>`:''}
+      View location on Google Maps</a>`:''}${has(CAMPAIGN.adUrl)?`<a class="maplink" href="${esc(CAMPAIGN.adUrl)}" target="_blank" rel="noopener">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+      View listing page</a>`:''}
     <p class="lede">${esc(CAMPAIGN.lede||'')}</p>
     ${has(CAMPAIGN.updated)||has(CAMPAIGN.created)?`<div class="stamp">
       ${has(CAMPAIGN.updated)?`Last updated <b>${esc(CAMPAIGN.updated)}</b>`:''}${has(CAMPAIGN.updated)&&has(CAMPAIGN.created)?' · ':''}${has(CAMPAIGN.created)?`Created <b>${esc(CAMPAIGN.created)}</b>`:''}
@@ -1839,7 +1856,7 @@ function browseSlide(){
     kids.forEach(c=>{
       const pic = c.type==='carousel' ? ((c.cards||[]).find(x=>has(x.src))||{}).src
                 : isVid(c) ? (c.poster||'') : c.src;
-      const badge = c.type==='reels' ? ICONS.film : c.type==='carousel' ? ICONS.cards
+      const badge = (c.type==='reels'||c.type==='construction') ? ICONS.film : c.type==='carousel' ? ICONS.cards
                   : c.type==='story' ? ICONS.ring : '';
       const t2 = el(`<button class="thumb" data-go="${c.id}" style="--tcol:${TYPES[t].col}">
         <span class="rib"></span>
