@@ -3056,7 +3056,8 @@ function renderNav(){
   const here = location.pathname.replace(/index\.html$|full\.html$/,'');
   const st = p => (LIVE_STATUS && LIVE_STATUS[p.dir]) || p.status || 'live';
   const links = [{label:'All projects', href: CAMPAIGN.nav.home||'../', cls:'', sold:false}];
-  for(const p of (CAMPAIGN.nav.projects||[])){
+  const _navProjects = [...(CAMPAIGN.nav.projects||[])].sort((a,b)=>a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+  for(const p of _navProjects){
     if(st(p)==='hidden') continue;
     const target = new URL(p.href, location.href).pathname;
     links.push({label:p.label, href:p.href, cls: here===target?'on':'', sold: st(p)==='soldout'});
@@ -3115,9 +3116,10 @@ async function vaultOpen(pw){
 
 function adminPanel(token){
   const st = p => (LIVE_STATUS && LIVE_STATUS[p.dir]) || p.status || 'live';
+  const _admProjects = [...(CAMPAIGN.nav.projects||[])].sort((a,b)=>a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
   const wrap = el(`<div class="admin-veil"><div class="admin">
     <h3>Project visibility</h3>
-    ${(CAMPAIGN.nav.projects||[]).map(p=>`
+    ${_admProjects.map(p=>`
       <div class="admin-row"><span>${esc(p.label)}</span>
         <select data-dir="${esc(p.dir)}">
           ${['live','soldout','hidden'].map(v=>`<option value="${v}" ${st(p)===v?'selected':''}>${v==='live'?'Live':v==='soldout'?'Sold out':'Hidden'}</option>`).join('')}
