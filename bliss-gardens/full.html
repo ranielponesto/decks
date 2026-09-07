@@ -70,6 +70,13 @@ html[data-theme="dark"] .rail .logo .logo-d{display:block}
 .nav-inline a.is-sold{opacity:.6}
 .rail-sold{flex:none;font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--c-reels);
   border:1px solid currentColor;border-radius:3px;padding:2px 6px}
+.dl-pick{min-width:340px}.dl-sub{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.dl-list{border:1px solid var(--line-soft);border-radius:var(--r);overflow:hidden}
+.dl-row{display:flex;align-items:center;gap:11px;padding:11px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--line-soft)}
+.dl-row:last-child{border-bottom:0}.dl-row:hover{background:var(--paper)}
+.dl-row input{width:16px;height:16px;accent-color:var(--brand-teal,#45828C);cursor:pointer}
+.dl-row span{flex:1}.dl-row em{font-style:normal;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+.dl-row.dl-all{background:var(--paper)}.dl-sep{height:0}
 .admin-veil{position:fixed;inset:0;background:rgba(17,24,32,.5);z-index:120;display:grid;place-items:center}
 .admin{background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
   padding:22px;min-width:320px;max-width:92vw;font-family:"IBM Plex Sans",system-ui,sans-serif}
@@ -1180,13 +1187,64 @@ function dataURLtoBlob(u){ const [h,b]=u.split(','); const mime=(h.match(/data:(
 function extFor(file, fallback){ const m=String(file||'').match(/\.[a-z0-9]+$/i); return m?m[0]:fallback; }
 function _bn(file, fb){ try { return (typeof baseName==='function') ? baseName(file, fb) : (String(file||'').split('/').pop()||fb); } catch(e){ return fb; } }
 function _catLabel(k){ try { return (typeof catLabel==='function') ? catLabel(k) : k; } catch(e){ return k; } }
-async function downloadProjectZip(){
+
+/* ---------- Download picker: choose which content types to include ---------- */
+const TYPE_LABEL = { brochure:'Brochure', photo:'Social statics', carousel:'Carousels',
+  reels:'Reels', story:'Stories', walkthrough:'Walkthroughs', construction:'Construction updates', gallery:'Gallery' };
+function _typeCount(t){
+  let n=0;
+  for(const c of CREATIVES){ if(c.type!==t) continue;
+    if(t==='carousel') n+=(c.cards||[]).filter(x=>has(x.src)).length;
+    else if(t==='gallery') n+=(c.photos||[]).filter(x=>has(x.src)).length;
+    else if(t==='brochure') n+=(has(c.pdf)||has(c.pdfHref))?1:0;
+    else n+=has(c.src)?1:0;
+  }
+  return n;
+}
+function openDownloadPicker(){
+  const order=['brochure','photo','carousel','reels','story','walkthrough','construction','gallery'];
+  const present=order.filter(t=>_typeCount(t)>0);
+  if(!present.length){ toast('Nothing to download'); return; }
+  const rows=present.map(t=>`<label class="dl-row"><input type="checkbox" data-t="${t}" checked>
+      <span>${esc(TYPE_LABEL[t]||t)}</span><em>${_typeCount(t)}</em></label>`).join('');
+  const veil=el(`<div class="admin-veil"><div class="admin dl-pick">
+    <h3>Download creatives</h3>
+    <p class="dl-sub">Choose what to include. Each type lands in its own folder inside the .zip.</p>
+    <div class="dl-list">
+      <label class="dl-row dl-all"><input type="checkbox" id="dlAll" checked><span><b>All types</b></span><em></em></label>
+      <div class="dl-sep"></div>
+      ${rows}
+    </div>
+    <div class="admin-acts">
+      <button class="ui solid dl-go">Download .zip</button>
+      <button class="ui dl-close">Cancel</button>
+    </div>
+  </div></div>`);
+  document.body.appendChild(veil);
+  const boxes=[...veil.querySelectorAll('input[data-t]')];
+  const allBox=veil.querySelector('#dlAll');
+  const sync=()=>{ allBox.checked = boxes.every(b=>b.checked);
+    allBox.indeterminate = !allBox.checked && boxes.some(b=>b.checked); };
+  allBox.addEventListener('change',()=>{ boxes.forEach(b=>b.checked=allBox.checked); });
+  boxes.forEach(b=>b.addEventListener('change',sync));
+  veil.addEventListener('click',e=>{ if(e.target===veil) veil.remove(); });
+  veil.querySelector('.dl-close').addEventListener('click',()=>veil.remove());
+  veil.querySelector('.dl-go').addEventListener('click',()=>{
+    const allowed=new Set(boxes.filter(b=>b.checked).map(b=>b.dataset.t));
+    if(!allowed.size){ toast('Pick at least one type'); return; }
+    veil.remove(); downloadProjectZip(allowed);
+  });
+}
+
+async function downloadProjectZip(allowed){
   if(typeof JSZip==='undefined'){ toast('Zip library not loaded'); return; }
+  const _ok = t => !allowed || allowed.has(t);
   const btn=document.getElementById('dlProject'); const label=btn?btn.textContent:'';
   if(btn) btn.disabled=true;
   const zip=new JSZip(); let n=0, total=0; const jobs=[];
   const add=(folder, name, getter)=>{ total++; jobs.push({folder,name,getter}); };
   for(const c of CREATIVES){
+    if(!_ok(c.type)) continue;
     const folder = TYPE_FOLDER[c.type] || 'Other';
     if(c.type==='brochure'){
       if(has(c.pdf)||has(c.pdfHref)) add(folder, _bn(c.file, c.id+'.pdf'), ()=> (c.pdf?dataURLtoBlob(c.pdf):fetchAsBlob(c.pdfHref)));
@@ -1786,7 +1844,7 @@ function browseSlide(){
   const s = el(`<section class="slide"><div class="browse">
     <div class="eyebrow">${esc(CAMPAIGN.kicker||'Creatives')}</div>
     <h1>${esc(CAMPAIGN.project)} <em>creatives</em></h1>
-    <button class="ui solid dlproject" id="dlProject" style="margin:10px 0 14px">⬇ Download all creatives (.zip)</button>
+    <button class="ui solid dlproject" id="dlProject" style="margin:10px 0 14px">⬇ Download creatives (.zip)</button>
     ${has(CAMPAIGN.mapUrl)?`<a class="maplink" href="${esc(CAMPAIGN.mapUrl)}" target="_blank" rel="noopener">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
       View location on Google Maps</a>`:''}${has(CAMPAIGN.adUrl)?`<a class="maplink" href="${esc(CAMPAIGN.adUrl)}" target="_blank" rel="noopener">
@@ -2342,6 +2400,6 @@ function toast(msg){
 
 go(0);
 </script>
-<script>document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('#dlProject');if(t){e.preventDefault();downloadProjectZip();}});</script>
+<script>document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('#dlProject');if(t){e.preventDefault();openDownloadPicker();}});</script>
 </body>
 </html>
