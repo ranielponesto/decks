@@ -106,8 +106,9 @@ html[data-theme="dark"] .rail .logo .logo-d{display:block}
 .cmt .byc{font-size:12px;color:var(--muted);margin:8px 0 2px;letter-spacing:.05em;text-transform:uppercase}
 .fbsec{max-width:1360px;margin:18px auto 0;border-top:1px solid var(--line);padding-top:14px;
   font-family:"IBM Plex Sans",system-ui,sans-serif}
-.fbsec .fb-h{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--muted);margin-bottom:8px}
+.fbsec .fb-h{display:flex;align-items:center;gap:10px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px}.fbsec .fb-share{margin-left:auto;font-size:10.5px;padding:3px 9px;letter-spacing:.05em}
+
 .fbsec .fb-h b{color:var(--accent)}
 .fbsec .note{border-bottom:1px solid var(--line-soft);padding:9px 0;font-size:13.5px}
 .fbsec .note .who{font-size:11px;color:var(--muted);margin-bottom:2px;display:flex;justify-content:space-between;gap:10px}
@@ -2229,7 +2230,7 @@ function updateFab(){
 }
 function feedbackSection(c){
   const sec = el(`<div class="fbsec">
-    <div class="fb-h">Feedback <b class="n"></b></div>
+    <div class="fb-h">Feedback <b class="n"></b><button class="ui fb-share" title="Share this creative">Share ↗</button></div>
     <div class="list"></div>
     <div class="fb-add">
       <textarea placeholder="Write feedback for ${esc(c.id)}…" dir="auto"></textarea>
@@ -2249,6 +2250,7 @@ function feedbackSection(c){
     }));
   }
   render();
+  sec.querySelector('.fb-share')?.addEventListener('click', ()=>shareCreative(c));
   sec.querySelector('.f-add').addEventListener('click', ()=>{
     const ta = sec.querySelector('textarea'); const t = ta.value.trim(); if(!t) return;
     const nn = notesLoad();
@@ -2382,6 +2384,8 @@ function go(i){
   ensureVideo(slides[cur]);
   cNow.textContent=cur+1;
   railTitle.textContent=slides[cur].dataset.title||'';
+  try{ const cid=slides[cur].dataset.cid;
+    if(cid){ if(location.hash.slice(1)!==cid) history.replaceState(null,'','#'+cid); } }catch(e){}
   const t=slides[cur].dataset.type;
   const c=t?TYPES[t].col:'var(--c-photo)';
   railDot.style.background=c; prog.style.background=c;
@@ -2390,6 +2394,18 @@ function go(i){
   if(cur===0 && lastId){
     const el0 = slides[0].querySelector('.thumb.here,.feat-card.here');
     if(el0) el0.scrollIntoView({block:'center'});
+  }
+}
+function shareCreative(c){
+  const url = location.origin + location.pathname + location.search + '#' + c.id;
+  const title = (CAMPAIGN.project||'Creative') + ' — ' + c.id;
+  const text = title + (c.name?(': '+c.name):'');
+  if(navigator.share){
+    navigator.share({title:title, text:text, url:url}).catch(()=>{});
+  } else {
+    (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject())
+      .then(()=>toast('Link copied'),()=>{
+        window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+url),'_blank'); });
   }
 }
 function goToCreative(id){ const i=slides.findIndex(s=>s.dataset.cid===id); if(i>-1) go(i); }
@@ -2462,5 +2478,6 @@ function toast(msg){
 go(0);
 </script>
 <script>document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('#dlProject');if(t){e.preventDefault();openDownloadPicker();}});</script>
+<script>(function(){function openHash(){var h=(location.hash||'').slice(1);if(!h)return;var i=slides.findIndex(function(s){return s.dataset.cid===h});if(i>-1)go(i);}openHash();window.addEventListener('hashchange',openHash);})();</script>
 </body>
 </html>
