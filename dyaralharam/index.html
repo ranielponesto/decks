@@ -649,7 +649,8 @@ const CAMPAIGN = {
         "href": "../dari/",
         "dir": "dari",
         "blurb": "Brochure · brand guideline · 13-photo gallery",
-        "status": "live"
+        "status": "live",
+        "order": 1
       }
     ]
   },
@@ -1689,7 +1690,8 @@ function renderNav(){
   const here = location.pathname.replace(/index\.html$|full\.html$/,'');
   const st = p => (LIVE_STATUS && LIVE_STATUS[p.dir]) || p.status || 'live';
   const links = [{label:'All projects', href: CAMPAIGN.nav.home||'../', cls:'', sold:false}];
-  const _navProjects = [...(CAMPAIGN.nav.projects||[])].sort((a,b)=>a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+  /* alphabetical, except projects carrying an explicit `order` sink to the end (higher = later) */
+  const _navProjects = [...(CAMPAIGN.nav.projects||[])].sort((a,b)=>((a.order||0)-(b.order||0)) || a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
   for(const p of _navProjects){
     if(st(p)==='hidden') continue;
     const target = new URL(p.href, location.href).pathname;
