@@ -478,6 +478,8 @@ td.when{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08e
   cursor:pointer;padding:0;text-align:left;transition:.15s;display:block;width:100%}
 .thumb:hover{border-color:var(--ink-2);transform:translateY(-2px)}
 .thumb.here{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.thumb.hide{display:none}
+.thumb .tlab{position:absolute;left:0;top:0;z-index:2;font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--tcol,var(--ink));padding:3px 7px;border-radius:0 0 3px 0;pointer-events:none}
 .thumb .pic{aspect-ratio:4/5;background:var(--paper-2);overflow:hidden;position:relative}
 .thumb .pic img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb .pic .blank{position:absolute;inset:0;display:grid;place-items:center;
@@ -668,7 +670,7 @@ const TYPES = {
   gallery:  { label:'Gallery',  long:'Photo gallery',  col:'var(--c-gallery)'  },
   construction: { label:'Construction', long:'Construction update', col:'var(--c-story)' }
 };
-const ORDER  = ['brochure','photo','carousel','reels','story','construction','gallery'];
+const ORDER  = ['brochure','photo','carousel','story','reels','construction','gallery'];
 const SPEC   = { '4:5':'1080 × 1350', '1:1':'1080 × 1080', '9:16':'1080 × 1920', '16:9':'1920 × 1080' };
 const LIMITS = { primary:125, headline:40, description:30 };
 /* canonical category order for the photo gallery — sections render in this
@@ -1505,33 +1507,33 @@ function browseSlide(){
   const broSection = featSection('brochure', 'Featured');
   if(broSection) host.appendChild(broSection);
 
-  if(regularTypes.length && broSection){
-    host.appendChild(el(`<div class="section-h" style="margin-top:6px">Social creatives</div>`));
-  }
-
-  regularTypes.forEach(t=>{
-    const kids = CREATIVES.filter(c=>c.type===t);
-    const g = el(`<div class="bgroup" data-t="${t}" style="--tcol:${TYPES[t].col}">
-      <div class="bgroup-h"><b>${esc(TYPES[t].long)}</b> · ${kids.length} ${kids.length===1?'creative':'creatives'}</div>
+  /* every social format shares one section and one grid, ordered by ORDER
+     (stills → carousels → stories → reels → …); each thumb carries its type
+     for the filter row and its own type colour */
+  if(regularTypes.length){
+    const kids = regularTypes.flatMap(t=>CREATIVES.filter(c=>c.type===t));
+    const g = el(`<div class="bgroup social" data-t="social">
+      <div class="section-h" style="margin-top:6px">Social creatives · ${kids.length} ${kids.length===1?'creative':'creatives'}</div>
       <div class="bgrid"></div></div>`);
     const grid = g.querySelector('.bgrid');
-    kids.forEach(c=>{
+    kids.forEach(c=>{ const t=c.type;
       const pic = c.type==='carousel' ? ((c.cards||[]).find(x=>has(x.src))||{}).src
                 : isVid(c) ? (c.poster||'') : c.src;
       const badge = (c.type==='reels'||c.type==='construction') ? ICONS.film : c.type==='carousel' ? ICONS.cards
                   : c.type==='story' ? ICONS.ring : '';
       const t2 = el(`<button class="thumb" data-go="${c.id}" style="--tcol:${TYPES[t].col}">
-        <span class="rib"></span>
+        <span class="rib"></span><span class="tlab">${esc(TYPES[t].label)}</span>
         <div class="pic">${has(pic)?'':'<div class="blank">Asset pending</div>'}</div>
         ${badge?`<span class="badge">${badge}${c.type==='carousel'&&c.cards?`<span>${c.cards.length}</span>`:''}</span>`:''}
         <div class="cap"><b>${esc(c.id)}</b><span dir="auto">${esc(c.name||'Untitled')}</span>${has(c.added)?`<span class="when">${esc(c.added)}</span>`:''}</div>
       </button>`);
       if(has(pic)) t2.querySelector('.pic').appendChild(lazyImg(pic, c.name||c.id));
+      t2.dataset.t = t;
       t2.addEventListener('click', ()=>goToCreative(c.id));
       grid.appendChild(t2);
     });
     host.appendChild(g);
-  });
+  }
 
   const galSection = featSection('gallery', 'Photo gallery');
   if(galSection) host.appendChild(galSection);
@@ -1540,10 +1542,12 @@ function browseSlide(){
   fbtns.forEach(b=>b.addEventListener('click',()=>{
     fbtns.forEach(x=>x.classList.toggle('on',x===b));
     const f=b.dataset.f;
-    host.querySelectorAll('.bgroup').forEach(g=>g.classList.toggle('hide', f!=='all' && g.dataset.t!==f));
-    /* the "Social creatives" rule only makes sense while a social group shows */
-    const div = host.querySelector(':scope > .section-h');
-    if(div) div.classList.toggle('hide', f!=='all' && !regularTypes.includes(f));
+    host.querySelectorAll('.bgroup:not(.social)').forEach(g=>g.classList.toggle('hide', f!=='all' && g.dataset.t!==f));
+    const soc = host.querySelector('.bgroup.social');
+    if(soc){
+      soc.classList.toggle('hide', f!=='all' && !regularTypes.includes(f));
+      soc.querySelectorAll('.thumb').forEach(t=>t.classList.toggle('hide', f!=='all' && t.dataset.t!==f));
+    }
   }));
 
   s.dataset.title='All creatives'; return s;
