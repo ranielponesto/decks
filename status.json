@@ -3,5 +3,8 @@
  "ocean": "live",
  "dyaralharam": "live",
  "dari": "live",
- "blisstower": "live"
+ "blisstower": "live",
+ "pages": {
+  "ocean": false
+ }
 }
