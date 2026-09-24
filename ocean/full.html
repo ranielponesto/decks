@@ -350,6 +350,9 @@ td.fm{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;t
 
 /* ---------- brochure: full-bleed, screen-fitting slider ---------- */
 .brochure-view{padding-top:26px}
+.flipwrap{max-width:1360px;height:82vh;margin:0 auto;background:#141414;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.flipwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.bmeta-r a.ui{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .docfull{max-width:1360px;margin:0 auto}
 .docfull .doc-bar{padding:10px 14px;font-size:11px}
 .docfull .doc-stage{width:100%;height:82vh;max-height:82vh;margin:0 auto;padding:22px}
@@ -641,7 +644,7 @@ const CAMPAIGN = {
         "label": "Dyar Al Haram",
         "href": "../dyaralharam/",
         "dir": "dyaralharam",
-        "blurb": "Brochures (EN + AR) · investment summaries · 2 event posts · 2 carousels · 2 stories · 8 films · 56-photo gallery",
+        "blurb": "Brochures (EN + AR) · investment summaries · online flipbook · 2 event posts · 2 carousels · 2 stories · 8 films · 56-photo gallery",
         "status": "live"
       },
       {
@@ -1144,9 +1147,10 @@ const TYPES = {
   gallery:  { label:'Gallery',  long:'Photo gallery',  col:'var(--c-gallery)'  },
   construction: { label:'Construction', long:'Construction update', col:'var(--c-story)' },
   walkthrough: { label:'Walkthrough', long:'Unit walkthrough', col:'var(--c-carousel)' },
-  wati: { label:'WATI', long:'WATI Campaign', col:'var(--c-story)' }
+  wati: { label:'WATI', long:'WATI Campaign', col:'var(--c-story)' },
+  flipbook: { label:'Flipbook', long:'Interactive flipbook', col:'var(--c-brochure)' }
 };
-const ORDER  = ['brochure','photo','carousel','story','reels','walkthrough','construction','wati','gallery'];
+const ORDER  = ['brochure','flipbook','photo','carousel','story','reels','walkthrough','construction','wati','gallery'];
 const SPEC   = { '4:5':'1080 × 1350', '1:1':'1080 × 1080', '9:16':'1080 × 1920', '16:9':'1920 × 1080' };
 const LIMITS = { primary:125, headline:40, description:30 };
 /* canonical category order for the photo gallery — sections render in this
@@ -1283,7 +1287,7 @@ function _typeCount(t){
 }
 function openDownloadPicker(){
   const order=['brochure','photo','carousel','reels','story','walkthrough','construction','gallery'];
-  const present=order.filter(t=>_typeCount(t)>0);
+  const present=order.filter(t=>t!=='flipbook' && _typeCount(t)>0);
   if(!present.length){ toast('Nothing to download'); return; }
   const rows=present.map(t=>`<label class="dl-row"><input type="checkbox" data-t="${t}" checked>
       <span>${esc(TYPE_LABEL[t]||t)}</span><em>${_typeCount(t)}</em></label>`).join('');
@@ -1744,6 +1748,7 @@ function vertPreview(c, s){
 /* ---------- one creative = one slide ---------- */
 function creativeSlide(c){
   if(c.type==='brochure') return brochureSlide(c);
+  if(c.type==='flipbook') return flipbookSlide(c);
   if(c.type==='gallery') return gallerySlide(c);
   const col = T(c).col;
   const tall = c.ratio==='9:16';
@@ -1917,6 +1922,38 @@ function brochureSlide(c){
   return s;
 }
 
+/* ---------- embedded flipbook (FlipHTML5 etc.): the viewer runs in an iframe ---------- */
+function flipbookSlide(c){
+  const col = T(c).col;
+  const s = el(`<section class="slide brochure-view" style="--accent:${col}"></section>`);
+  const wrap = el(`<div class="flipwrap"><iframe src="${esc(c.src)}" title="${esc(c.name||c.id)}" loading="lazy" allowfullscreen allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe></div>`);
+  const meta = el(`<div class="bmeta">
+    <div class="bmeta-l">
+      <div class="eyebrow ${has(c.added)?'dated':''}" style="margin-bottom:8px">${esc(c.id)} · ${esc(T(c).long)}${has(c.added)?`<span class="when">${esc(c.updated&&c.updated!==c.added?'Updated '+c.updated:'Added '+c.added)}</span>`:''}</div>
+      <h2 dir="auto" style="font-size:clamp(20px,2.4vw,28px);margin-bottom:8px">${esc(c.name)}</h2>
+      <div dir="auto" class="fbody ${has(c.description)?'':'ph'}" style="font-size:13.5px">${has(c.description)?esc(c.description):'What this flipbook is and when to send it.'}</div>
+      ${has(c.notes)?`<div class="fbody" style="font-size:12.5px;color:var(--muted);margin-top:8px">${esc(c.notes)}</div>`:''}
+      <div class="chips" style="margin-top:12px">
+        <span class="chip" style="background:${col};color:#fff">${esc(T(c).long)}</span>
+        ${has(c.set)?`<span class="chip">${esc(c.set)}</span>`:''}
+        <span class="chip">Hosted on ${esc(c.host||'external site')}</span>
+      </div>
+    </div>
+    <div class="bmeta-r">
+      <a class="ui solid" href="${esc(c.src)}" target="_blank" rel="noopener">Open in new tab</a>
+      <button class="ui gofull">Fullscreen</button>
+      <button class="ui gohome">All creatives</button>
+    </div>
+  </div>`);
+  meta.querySelector('.gohome').addEventListener('click', goHome);
+  meta.querySelector('.gofull').addEventListener('click', ()=>toggleViewerFullscreen(s));
+  meta.appendChild(feedbackSection(c));
+  s.append(wrap, meta);
+  s.dataset.title = `${c.id} — ${c.name||''}`;
+  s.dataset.type  = c.type;
+  return s;
+}
+
 /* ---------- browse / home ---------- */
 function browseSlide(){
   const groups = ORDER.filter(t=>CREATIVES.some(c=>c.type===t));
@@ -1948,7 +1985,7 @@ function browseSlide(){
   /* Brochure leads the page and the gallery closes it; the social formats
      sit between them. Each is its own single-type group, so the filter row
      below stays a plain data-t match. */
-  const FEATURED = ['brochure','gallery'];
+  const FEATURED = ['brochure','flipbook','gallery'];
   const regularTypes = groups.filter(t=>!FEATURED.includes(t));
 
   function featSection(type, heading){
@@ -1959,15 +1996,15 @@ function browseSlide(){
       <div class="feat-grid"></div></div>`);
     const grid = g.querySelector('.feat-grid');
     kids.forEach(c=>{
-      const isGal = c.type==='gallery';
-      const pic = isGal ? ((c.photos||[]).find(x=>has(x.src))||{}).src : ((c.pages||[]).find(x=>has(x.src))||{}).src;
+      const isGal = c.type==='gallery', isFlip = c.type==='flipbook';
+      const pic = isFlip ? c.poster : isGal ? ((c.photos||[]).find(x=>has(x.src))||{}).src : ((c.pages||[]).find(x=>has(x.src))||{}).src;
       const count = isGal ? (c.photos||[]).length : (c.pages||[]).length;
       const unit = isGal ? `photo${count===1?'':'s'}` : `page${count===1?'':'s'}`;
       const icon = isGal ? ICONS.gallery : ICONS.doc;
       const card = el(`<button class="feat-card" data-go="${c.id}" data-type="${c.type}" style="--tcol:${T(c).col}">
         <div class="feat-pic">${has(pic)?'':'<div class="blank">Asset pending</div>'}</div>
         <div class="feat-body">
-          <span class="feat-badge" style="color:${T(c).col}">${icon}${esc(T(c).label)} · ${count} ${unit}</span>
+          <span class="feat-badge" style="color:${T(c).col}">${icon}${esc(T(c).label)}${isFlip?' · online':` · ${count} ${unit}`}</span>
           <b dir="auto">${esc(c.name||'Untitled')}</b>
           ${has(c.description)?`<span class="feat-desc" dir="auto">${esc(c.description)}</span>`:''}
           <div class="feat-meta"><span class="feat-cta" style="color:${T(c).col}">Open ›</span>${has(c.added)?`<span class="feat-when">${esc(c.added)}</span>`:''}</div>
@@ -1982,6 +2019,8 @@ function browseSlide(){
 
   const broSection = featSection('brochure', 'Featured');
   if(broSection) host.appendChild(broSection);
+  const flipSection = featSection('flipbook', 'Interactive');
+  if(flipSection) host.appendChild(flipSection);
 
   /* every social format shares one section and one grid, ordered by ORDER
      (stills → carousels → stories → reels → …); each thumb carries its type
