@@ -350,8 +350,10 @@ td.fm{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;t
 
 /* ---------- brochure: full-bleed, screen-fitting slider ---------- */
 .brochure-view{padding-top:26px}
-.flipwrap{max-width:1360px;height:82vh;margin:0 auto;background:#141414;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.18)}
-.flipwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.flipdoc .doc-stage{position:relative;padding:0;height:82vh;max-height:82vh;background:#021823}
+.flipdoc .doc-stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#021823}
+.flipdoc:fullscreen .doc-stage{height:100%;max-height:none}
+.doc-bar .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2ecc71;margin-right:6px;vertical-align:1px;box-shadow:0 0 0 3px rgba(46,204,113,.18)}
 .bmeta-r a.ui{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .docfull{max-width:1360px;margin:0 auto}
 .docfull .doc-bar{padding:10px 14px;font-size:11px}
@@ -1867,7 +1869,11 @@ function brochureSlide(c){
 function flipbookSlide(c){
   const col = T(c).col;
   const s = el(`<section class="slide brochure-view" style="--accent:${col}"></section>`);
-  const wrap = el(`<div class="flipwrap"><iframe src="${esc(c.src)}" title="${esc(c.name||c.id)}" loading="lazy" allowfullscreen allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe></div>`);
+  /* same viewer chrome as the brochure: title bar on top, dark fitted stage below */
+  const wrap = el(`<div class="doc docfull flipdoc">
+    <div class="doc-bar"><span class="nm" dir="auto">${esc(c.name||c.id)}</span><span class="pg"><span class="live-dot"></span>Live · ${esc(c.host||'online')}</span></div>
+    <div class="doc-stage"><iframe src="${esc(c.src)}" title="${esc(c.name||c.id)}" loading="lazy" allowfullscreen allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+  </div>`);
   const meta = el(`<div class="bmeta">
     <div class="bmeta-l">
       <div class="eyebrow ${has(c.added)?'dated':''}" style="margin-bottom:8px">${esc(c.id)} · ${esc(T(c).long)}${has(c.added)?`<span class="when">${esc(c.updated&&c.updated!==c.added?'Updated '+c.updated:'Added '+c.added)}</span>`:''}</div>
@@ -2478,7 +2484,8 @@ function toast(msg){
   clearTimeout(tid);tid=setTimeout(()=>t.classList.remove('on'),1900);
 }
 
-go(0);
+/* initial render must not touch the URL, or a shared #deep-link is lost before openHash runs */
+window.__fromHash=true; try{ go(0); } finally { window.__fromHash=false; }
 </script>
 <script>document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('#dlProject');if(t){e.preventDefault();openDownloadPicker();}});</script>
 <script>(function(){function openHash(){var h=(location.hash||'').slice(1);var i=h?slides.findIndex(function(s){return s.dataset.cid===h}):0;if(i<0)return;window.__fromHash=true;try{go(i);}finally{window.__fromHash=false;}}window.addEventListener('hashchange',openHash);window.addEventListener('popstate',openHash);if(location.hash){openHash();}})();</script>
