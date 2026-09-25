@@ -57,7 +57,8 @@ a.card:hover .card-dim{opacity:1}
 .card-tag.sales{background:#B9E3E7} .card-tag.leasing{background:var(--gold)}
 .card-name{font-size:15.5px;font-weight:600;line-height:1.25}
 .card-area{font-size:12.5px;opacity:.95}
-.card-meta{font-size:12px;opacity:.9;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{font-size:12px;line-height:1.45;opacity:.9;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:calc(12px * 1.45 * 2)}
+.card-name{min-height:calc(15.5px * 1.25)} .card-area{min-height:calc(12.5px * 1.45)}
 .card-btn{align-self:flex-start;max-height:0;opacity:0;overflow:hidden;margin-top:0;border:1px solid #fff;border-radius:999px;padding:0 16px;font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;line-height:34px;color:#fff;background:rgba(255,255,255,.08);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   transition:max-height .3s ease,opacity .3s ease,margin-top .3s ease,background .2s ease}
 a.card:hover .card-btn,a.card:focus-visible .card-btn{max-height:36px;opacity:1;margin-top:10px}
