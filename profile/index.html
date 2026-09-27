@@ -405,6 +405,13 @@
   html.has-logo .emblem{display:none}
   html[data-theme=light] .emblem .em-dark{display:none}
   html[data-theme=light] .emblem .em-light{display:block}
+
+  .pcard.open{display:flex;flex-direction:column}
+  .pcard.open .pc-expand{position:relative;inset:auto;flex:1 1 auto;height:auto!important;min-height:0}
+  .pcard.open .pc-body{position:relative;left:auto;right:auto;bottom:auto;height:auto;flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:.35rem 1rem;padding:.6rem .9rem;background:var(--navy-deep)}
+  .pcard.open .pc-body .pc-info{margin-left:auto;white-space:normal}
+  .pcard.open .pc-tabs{flex:none;flex-wrap:wrap;gap:6px}
+  .pcard.open .pc-close{top:.8rem;right:.8rem}
   /* ===== light theme ===== */
   html[data-theme=light]{--navy:#FFFFFF;--navy-deep:#F2F5F9;--teal:#0E8F86;--teal-bright:#0B7A72;--mist:#5C6B7A;--line:rgba(14,143,134,.28);--gold:#9A7A4E}
   html[data-theme=light] body{color:#0A1F3C}
@@ -1302,9 +1309,10 @@
 </script>
 <script>document.querySelectorAll("[data-flip]").forEach(h=>h.addEventListener("click",()=>h.classList.toggle("show")));</script>
 <script>
+document.querySelectorAll('.dots button span').forEach(e=>e.remove());
 (function(){document.querySelectorAll('.pcards').forEach(wrap=>{const cards=[...wrap.querySelectorAll('.pcard')];let timer,openCard=null;
 function layout(){if(matchMedia('(max-width:700px)').matches)return;const n=cards.length,gap=14,W=wrap.clientWidth;if(!W)return;const sec=wrap.closest('section');const top=wrap.getBoundingClientRect().top-sec.getBoundingClientRect().top+sec.scrollTop;const avail=Math.max(260,window.innerHeight-top-Math.round(window.innerHeight*0.14));
-let best=null,fallback=null;for(let cols=1;cols<=n;cols++){const w=(W-gap*(cols-1))/cols,h=Math.round(w*16/9),rows=Math.ceil(n/cols),gh=rows*h+(rows-1)*gap;if(w<120)break;fallback={cols,w,h,rows,gh};if(gh<=avail){best=fallback;break}}
+let best=null,fallback=null;for(let cols=1;cols<=n;cols++){const w=(W-gap*(cols-1))/cols,h=Math.round(w*16/9),rows=Math.ceil(n/cols),gh=rows*h+(rows-1)*gap;if(w<92)break;fallback={cols,w,h,rows,gh};if(gh<=avail){best=fallback;break}}
 if(!best)best=fallback||{cols:n,w:(W-gap*(n-1))/n,h:Math.round(((W-gap*(n-1))/n)*16/9),rows:1,gh:Math.round(((W-gap*(n-1))/n)*16/9)};
 const {cols,w,h,rows,gh}=best;const openH=Math.min(Math.round(W*3/8)+72,Math.max(avail,300));wrap.style.height=(openCard?openH:gh)+'px';cards.forEach((c,i)=>{if(c===openCard){c.style.left='0px';c.style.top='0px';c.style.width=W+'px';c.style.height=openH+'px'}else{const r=Math.floor(i/cols),k=i%cols;c.style.left=(k*(w+gap))+'px';c.style.top=(r*(h+gap))+'px';c.style.width=w+'px';c.style.height=h+'px'}c.style.setProperty('--cw',w);c.classList.toggle('narrow',w<210)})}
 function open(c){openCard=c;cards.forEach(o=>o.classList.toggle('open',o===c));wrap.classList.add('has-open');layout();wrap.scrollIntoView({behavior:'smooth',block:'nearest'})}
