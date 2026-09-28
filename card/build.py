@@ -73,7 +73,7 @@ def vcard(a, c, url):
     if wa and wa != a.get("phone"): L.append(f"TEL;TYPE=CELL:{wa}")
     if c.get("sales_phone"): L.append(f"TEL;TYPE=WORK,VOICE:{c['sales_phone']}")
     if a.get("email"): L.append(f"EMAIL;TYPE=INTERNET,WORK:{a['email']}")
-    L.append(f"URL:{c.get('website') or 'https://www.capstoneproperty.com'}")
+    L.append(f"URL:{a.get('website') or c.get('website') or 'https://www.capstoneproperty.com'}")
     if c.get("address"): L.append(f"ADR;TYPE=WORK:;;{esc(c['address'])};;;;")
     for k, v in (a.get("socials") or {}).items():
         if v and k in SOCIAL:
@@ -135,7 +135,8 @@ def page(a, c, url, qr_svg):
         v = clean_handle(v)
         if v and k in SOCIAL:
             links.append((SOCIAL[k][2](v), k, SOCIAL[k][0]))
-    if c.get("website"): links.append((c["website"], "globe", "Website"))
+    site = a.get("website") or c.get("website")
+    if site: links.append((site, "globe", "Website"))
     for k, v in (c.get("socials") or {}).items():
         v = clean_handle(v)
         if v and k in SOCIAL:
