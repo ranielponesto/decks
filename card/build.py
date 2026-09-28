@@ -142,7 +142,10 @@ def page(a, c, url, qr_svg):
             links.append((SOCIAL[k][2](v), k, c["name"] + " " + SOCIAL[k][0]))
     icons_html = ('<nav class="icons">' + "".join(
         f'<a class="icb" href="{E(h)}" target="_blank" rel="noopener" aria-label="{E(l)}" title="{E(l)}">{icon(i)}</a>' for h, i, l in links)
-        + '</nav>') if links else ""
+        + '<span class="sep" aria-hidden="true"></span>'
+        + f'<button class="icb" type="button" id="qrb" aria-label="QR code" title="QR code">{icon("qr")}</button>'
+        + f'<button class="icb" type="button" id="shb" aria-label="Share card" title="Share card">{icon("share")}</button>'
+        + '</nav>')
     desc = f"{a['name']} · {a.get('title','')} at {c['name']}"
     photo_hero = (f'<img class="hp" src="{E(a["photo"])}" alt="{E(a["name"])}">' if a.get("photo")
                   else f'<span class="hm" aria-hidden="true">{E(initials)}</span>')
@@ -200,10 +203,11 @@ h1{{font-weight:400;font-size:clamp(26px,min(9vw,4.6svh),40px);line-height:1.04;
 .rv{{margin-inline-start:auto;unicode-bidi:isolate;font-size:14px;color:var(--sub);text-align:end;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}}
 @media (hover:hover){{.row:hover .rv{{color:#fff}}}}
 .icons{{margin-top:clamp(16px,3.2svh,32px);display:flex;justify-content:center;gap:14px}}
-.icb{{width:clamp(46px,6.4svh,54px);height:clamp(46px,6.4svh,54px);border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--gold);transition:background .2s,color .2s}}
+.icons .sep{{width:1px;align-self:center;height:24px;background:var(--line);margin:0 4px}}
+.icb{{background:transparent;cursor:pointer;padding:0;width:clamp(46px,6.4svh,54px);height:clamp(46px,6.4svh,54px);border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--gold);transition:background .2s,color .2s}}
 .icb .ic{{width:22px;height:22px}}
 @media (hover:hover){{.icb:hover{{background:rgba(255,255,255,.06);color:#fff}}}}
-.tools{{margin-top:clamp(4px,1.2svh,14px);padding-top:clamp(6px,1.6svh,22px);display:flex;justify-content:center;gap:8px}}
+.tools-unused{{padding-top:clamp(6px,1.6svh,22px);display:flex;justify-content:center;gap:8px}}
 .tool{{display:flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:99px;background:transparent;color:var(--sub);font:400 14px/1 var(--f);cursor:pointer;transition:color .2s,background .2s}}
 [dir=rtl] .tool{{font-family:var(--fa)}}
 .tool .ic{{width:18px;height:18px}}
@@ -242,10 +246,6 @@ a:focus-visible,button:focus-visible{{outline:2px solid var(--gold);outline-offs
    <div class="pair">{"".join(actions)}</div>
   </div>
   {icons_html}
-  <div class="tools">
-   <button class="tool" type="button" id="qrb">{icon("qr")}<span data-en="QR code" data-ar="رمز QR">QR code</span></button>
-   <button class="tool" type="button" id="shb">{icon("share")}<span data-en="Share card" data-ar="مشاركة البطاقة">Share card</span></button>
-  </div>
   <p class="foot" data-en="© {E(c["name"])}" data-ar="© {E(c.get("name_ar") or c["name"])}">© {E(c["name"])}</p>
  </div>
 </main>
