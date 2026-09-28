@@ -13,18 +13,18 @@
 :root{
   --bg:#F3F4F2; --surface:#FFFFFF; --ink:#15202B; --muted:#66707A; --line:#E1E4E1;
   --accent:#1D4A5A; --accent-ink:#FFFFFF; --soft:#E6EEF0; --hit:#FFF1C9;
-  --ok:#2E7D5B; --warn:#A5621C; --off:#8A8F95;
+  --ok:#2E7D5B; --warn:#A5621C; --off:#8A8F95; --live:#EFF6F7;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
   --bg:#0F151B; --surface:#161E26; --ink:#E8ECEE; --muted:#8C98A3; --line:#26313B;
   --accent:#7FB6C6; --accent-ink:#0F151B; --soft:#1C2A33; --hit:#4A3F1C;
-  --ok:#6CC49A; --warn:#E0A462; --off:#77818A; } }
+  --ok:#6CC49A; --warn:#E0A462; --off:#77818A; --live:#172630; } }
 :root[data-theme="dark"]{
   --bg:#0F151B; --surface:#161E26; --ink:#E8ECEE; --muted:#8C98A3; --line:#26313B;
   --accent:#7FB6C6; --accent-ink:#0F151B; --soft:#1C2A33; --hit:#4A3F1C;
-  --ok:#6CC49A; --warn:#E0A462; --off:#77818A; }
+  --ok:#6CC49A; --warn:#E0A462; --off:#77818A; --live:#172630; }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
@@ -62,7 +62,7 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:10px
 
 /* Table */
 .tablebox{overflow-x:auto;margin:16px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
-table{width:100%;border-collapse:collapse;min-width:980px}
+table{width:100%;border-collapse:collapse;min-width:1100px}
 thead th{text-align:left;font-size:12px;font-weight:500;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
 thead th.sort{cursor:pointer;user-select:none}
 thead th.sort:hover{color:var(--ink)}
@@ -71,6 +71,7 @@ tbody td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:to
 tbody tr.row{cursor:pointer}
 tbody tr.row:hover td{background:var(--soft)}
 tbody tr:last-child td{border-bottom:0}
+td.c-ref{white-space:nowrap}
 .ref{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .copy{border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;margin-left:2px;border-radius:6px;vertical-align:-2px}
 .copy:hover{color:var(--ink);background:var(--soft)}
@@ -90,6 +91,13 @@ th.num{text-align:right}
 .st.available::before{background:var(--ok)}
 .st.booked::before,.st.upcoming::before,.st.pending::before{background:var(--warn)}
 mark{background:var(--hit);color:inherit;border-radius:3px;padding:0 1px}
+tbody tr.row.live td{background:var(--live)}
+tbody tr.row.live td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+tbody tr.row.live:hover td{background:var(--soft)}
+.cta{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:12.5px;font-weight:500;padding:6px 11px;border-radius:8px;white-space:nowrap}
+.cta:hover{filter:brightness(1.12)}
+.cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sortby{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;color:var(--muted)}
 tr.detail td{background:var(--soft);padding:14px 14px 16px}
 .dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 24px;margin:0}
 .dl div{min-width:0}
@@ -106,7 +114,7 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   .panel{position:static}
   header.top{padding:18px 0 10px}
   .brand h1{font-size:22px}
-  .search input{font-size:17px;padding:14px 88px 14px 44px}
+  .search input{font-size:17px;padding:14px 118px 14px 44px;text-overflow:ellipsis}
   .search svg{left:14px}
   .search .count b{font-size:16px}
   .filters{gap:8px 12px}
@@ -114,7 +122,11 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   table{min-width:0}
   thead{display:none}
   tbody tr.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
-  tbody tr.row:hover td{background:none}
+  tbody tr.row:hover td,tbody tr.row.live td{background:none}
+  tbody tr.row.live{box-shadow:inset 3px 0 0 var(--accent);background:var(--live)}
+  tbody tr.row.live td:first-child{box-shadow:none}
+  td.c-meta .cta{margin-left:auto}
+  .sortby{margin-left:0}
   tbody td{padding:0;border:0}
   td.c-ref{grid-column:1}
   td.c-price{grid-column:2;grid-row:1;text-align:right}
@@ -189,6 +201,22 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
         </select>
         <button class="reset" id="reset" hidden>Clear filters</button>
       </div>
+      <div class="group" role="group" aria-label="Website">
+        <button class="chip" data-f="web" data-v="" aria-pressed="true">Any portal</button>
+        <button class="chip" data-f="web" data-v="1" aria-pressed="false">Live on website</button>
+      </div>
+      <label class="sortby">Sort by
+        <select id="sort" aria-label="Sort by">
+          <option value="refN:-1">Newest first</option>
+          <option value="project:1">Project, A to Z</option>
+          <option value="project:-1">Project, Z to A</option>
+          <option value="beds:1">Bedrooms, fewest first</option>
+          <option value="beds:-1">Bedrooms, most first</option>
+          <option value="price:1">Price, low to high</option>
+          <option value="price:-1">Price, high to low</option>
+          <option value="custom" hidden>Column order</option>
+        </select>
+      </label>
     </div>
     <div class="notice" id="notice" hidden></div>
   </div>
@@ -205,6 +233,7 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
         <th>Type</th>
         <th class="sort num" data-k="price">Price (QAR)</th>
         <th class="sort" data-k="agent">Listed by</th>
+        <th>Website</th>
         <th>Status</th>
       </tr></thead>
       <tbody id="tb"></tbody>
@@ -267,7 +296,7 @@ function fromSheetArrays(aoa){
 
 /* ---------- state ---------- */
 let DB,LOCS=[];
-const S={q:"",status:"Available",deal:"",bed:"",loc:"",use:"",sort:"refN",dir:-1,limit:100,open:null};
+const S={q:"",status:"Available",deal:"",bed:"",loc:"",use:"",web:"",sort:"refN",dir:-1,limit:100,open:null};
 function load(data,source){
   DB=data;
   const cnt={};for(const o of DB.list){if(o.loc)cnt[o.loc]=(cnt[o.loc]||0)+1}
@@ -307,6 +336,7 @@ function filter(){
     if(!refMode&&S.status&&o.status!==S.status) return false;
     if(S.deal&&o.deal!==S.deal) return false;
     if(S.use&&o.use!==S.use) return false;
+    if(S.web&&!webURL(o)) return false;
     if(S.loc&&o.loc!==S.loc) return false;
     if(S.bed!==""){const b=+S.bed; if(o.beds==null) return false; if(b===5?o.beds<5:o.beds!==b) return false;}
     if(refMode) return o.ref.toLowerCase()===refQ||o.ref.toLowerCase().startsWith(refQ);
@@ -318,8 +348,10 @@ function filter(){
   } else {
     const k=S.sort,d=S.dir;
     res.sort((a,b)=>{let x=a[k],y=b[k];
-      if(x==null&&y==null) return 0; if(x==null) return 1; if(y==null) return -1;
-      return (typeof x==="string"?x.localeCompare(y):x-y)*d;});
+      if(x===""||x==null)x=null; if(y===""||y==null)y=null;
+      if(x==null&&y==null) return b.refN-a.refN; if(x==null) return 1; if(y==null) return -1;
+      const c=(typeof x==="string"?x.localeCompare(y):x-y)*d; if(c) return c; return b.refN-a.refN;
+      });
   }
   return {res,terms:refMode?[q.replace(/^cap[-\s]?/i,"")]:terms,refMode};
 }
@@ -334,30 +366,32 @@ function render(){
     if(res.length&&off.length===res.length){note.hidden=false;note.textContent=`${off[0].ref} is marked “${off[0].status}”, so it isn’t in the available list. Showing it anyway.`}
     else note.hidden=true;
   } else note.hidden=true;
-  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.loc||S.use);
+  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.loc||S.use||S.web);
+  { const v=S.sort+":"+S.dir, sel=$("#sort"); sel.value=[...sel.options].some(o=>o.value===v)?v:"custom"; }
   document.querySelectorAll("thead th.sort").forEach(th=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k; if(!refMode&&k===S.sort) th.dataset.dir=S.dir>0?"\u2191":"\u2193"; else delete th.dataset.dir;});
   const tb=$("#tb");
   if(!res.length){
-    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.loc)tips.push("location"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status");
-    tb.innerHTML=`<tr><td colspan="8"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
+    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.loc)tips.push("location"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
+    tb.innerHTML=`<tr><td colspan="9"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
     $("#more").hidden=true; syncHash(); return;
   }
   const show=res.slice(0,S.limit);
   tb.innerHTML=show.map(o=>{
     const unit=o.unit?`<div class="sub">Unit ${hl(o.unit,terms)}</div>`:"";
     const loc=o.loc?`${hl(o.comm||o.sub,terms)}${o.sub&&o.sub!==o.comm&&o.comm?`<div class="sub">${hl(o.sub,terms)}</div>`:""}`:'<span class="sub">\u2014</span>';
-    const main=`<tr class="row" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
-      <td class="c-ref"><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${webURL(o)?`<a class="web" href="${webURL(o)}" target="_blank" rel="noopener" aria-label="Open ${esc(o.ref)} on capstoneproperty.com" title="Open on capstoneproperty.com">${WEBICON}</a>`:""}</td>
+    const main=`<tr class="row${webURL(o)?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
+      <td class="c-ref"><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></td>
       <td class="c-proj"><div class="proj">${hl(o.project,terms)}</div>${unit}</td>
       <td class="c-loc">${loc}</td>
       <td class="num c-hide">${bedLabel(o)}</td>
       <td class="c-hide"><span class="tag">${typeLabel(o)}</span></td>
       <td class="num c-price"><span class="price">${priceHTML(o)}</span></td>
       <td class="c-hide">${hl(o.agent,terms)}</td>
+      <td class="c-hide">${webURL(o)?`<a class="cta" href="${webURL(o)}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}View on website</a>`:'<span class="sub">\u2014</span>'}</td>
       <td class="c-hide"><span class="st ${stClass(o.status)}">${esc(o.status)}</span></td>
-      <td class="c-meta"><span class="tag">${o.beds==null?"No beds listed":bedLabel(o)+(o.beds===0?"":" bed")}</span><span class="tag">${typeLabel(o)}</span><span class="st ${stClass(o.status)}">${esc(o.status)}</span></td>
+      <td class="c-meta"><span class="tag">${o.beds==null?"No beds listed":bedLabel(o)+(o.beds===0?"":" bed")}</span><span class="tag">${typeLabel(o)}</span><span class="st ${stClass(o.status)}">${esc(o.status)}</span>${webURL(o)?`<a class="cta" href="${webURL(o)}" target="_blank" rel="noopener">${WEBICON}View on website</a>`:""}</td>
     </tr>`;
-    const det=S.open===o.ref?`<tr class="detail"><td colspan="8"><dl class="dl">
+    const det=S.open===o.ref?`<tr class="detail"><td colspan="9"><dl class="dl">
       <div><dt>Record type</dt><dd>${esc(o.rtype||"\u2014")}</dd></div>
       <div><dt>Community</dt><dd>${esc(o.comm||"\u2014")}${o.commInferred?' <span class="sub">(from project)</span>':""}</dd></div>
       <div><dt>Sub community</dt><dd>${esc(o.sub||"\u2014")}</dd></div>
@@ -377,13 +411,14 @@ function render(){
 function syncHash(){
   const p=new URLSearchParams();
   if(S.q)p.set("q",S.q); if(S.status!=="Available")p.set("status",S.status||"all");
-  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.loc)p.set("loc",S.loc); if(S.use)p.set("use",S.use);
+  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.loc)p.set("loc",S.loc); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
   const h=p.toString(); try{history.replaceState(null,"",h?"#"+h:location.pathname+location.search)}catch(e){}
 }
 function readHash(){
   const p=new URLSearchParams(location.hash.slice(1));
   S.q=p.get("q")||""; const st=p.get("status"); S.status=st==null?"Available":(st==="all"?"":st);
-  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.loc=p.get("loc")||""; S.use=p.get("use")||"";
+  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.loc=p.get("loc")||""; S.use=p.get("use")||""; S.web=p.get("web")||"";
+  const so=(p.get("sort")||"refN:-1").split(":"); S.sort=["refN","project","beds","price","loc","agent"].includes(so[0])?so[0]:"refN"; S.dir=so[1]==="1"?1:-1;
   $("#q").value=S.q; $("#use").value=S.use; $("#loc").value=S.loc; syncChips();
 }
 function syncChips(){ document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",String((S[c.dataset.f]??"")===c.dataset.v))); }
@@ -394,7 +429,8 @@ $("#q").addEventListener("keydown",e=>{if(e.key==="Escape"){e.target.value="";S.
 document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{S[c.dataset.f]=c.dataset.v;S.limit=100;syncChips();render()});
 $("#loc").onchange=e=>{S.loc=e.target.value;S.limit=100;render()};
 $("#use").onchange=e=>{S.use=e.target.value;S.limit=100;render()};
-$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",loc:"",use:"",limit:100,open:null});$("#q").value="";$("#loc").value="";$("#use").value="";syncChips();render();$("#q").focus()};
+$("#sort").onchange=e=>{if(e.target.value==="custom")return;const [k,d]=e.target.value.split(":");S.sort=k;S.dir=+d;S.limit=100;render()};
+$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",loc:"",use:"",web:"",limit:100,open:null});$("#q").value="";$("#loc").value="";$("#use").value="";syncChips();render();$("#q").focus()};
 $("#more").onclick=()=>{S.limit+=100;render()};
 document.querySelectorAll("thead th.sort").forEach(th=>th.onclick=()=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k;
   if(S.sort===k)S.dir*=-1;else{S.sort=k;S.dir=(k==="refN")?-1:1}render()});
@@ -433,9 +469,9 @@ function boot(seed){
     if(String(u.asOf||"").replace(/\D/g,"").slice(0,14)>FEED_VERSION){initial=d;src="upload"}else store.del("lt-upload")}catch(e){store.del("lt-upload")}}
   readHash(); load(initial,src);
 }
-$("#tb").innerHTML='<tr><td colspan="8"><div class="empty">Loading listings\u2026</div></td></tr>';
+$("#tb").innerHTML='<tr><td colspan="9"><div class="empty">Loading listings\u2026</div></td></tr>';
 fetch("listings.json?v="+FEED_VERSION).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(boot)
-  .catch(()=>{$("#tb").innerHTML='<tr><td colspan="8"><div class="empty"><strong>Listings didn\u2019t load</strong>Refresh the page. If it keeps happening, the listings feed is missing from the site.</div></td></tr>'});
+  .catch(()=>{$("#tb").innerHTML='<tr><td colspan="9"><div class="empty"><strong>Listings didn\u2019t load</strong>Refresh the page. If it keeps happening, the listings feed is missing from the site.</div></td></tr>'});
 $("#foot").textContent="Search by reference (e.g. 9072), project, unit, area or agent. Press / to jump to search. Filters are saved in the link, so you can share a search.";
 window.addEventListener("hashchange",()=>{readHash();render()});
 })();
