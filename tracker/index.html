@@ -178,11 +178,14 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   .filters > .group{width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:1px}
   .filters > .group::-webkit-scrollbar{display:none}
   .filters > .group .chip,.filters > .group > span{flex:none}
-  .filters > .area{order:1}
-  .ftoggle{display:inline-flex;order:2}
-  .sortby{order:3;margin-left:auto}
+  .filters > .deal-g{order:1}
+  .filters > .beds-g{order:2}
+  .filters > .area{order:3}
+  .ftoggle{display:inline-flex;order:4}
+  .sortby{order:5;margin-left:auto}
+  .filters > .beds-g > span,.filters > .area > span{min-width:38px}
   .sortby select{max-width:170px}
-  .filters > :not(.keep):not(.ftoggle){order:4}
+  .filters > :not(.keep):not(.ftoggle){order:6}
   .filters > .group select{flex:1 1 0;min-width:0;max-width:none}
   .filters > .group .ms{flex:1 1 0;min-width:0;position:static}
   .ms-btn{width:100%;max-width:none;min-width:0}
@@ -221,6 +224,7 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   td.c-comm .loc1{font-size:14px;font-weight:500}
   td.c-comm .sub{margin:0}
   td.c-comm .sub::before{content:"\00b7\00a0"}
+  td.c-comm .loc1.sub::before{content:none}
   /* footer: agent left, reference and website button right */
   td.c-agent{grid-column:1/-1;grid-row:4;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   td.c-agent .aname{font-size:13px}
@@ -292,7 +296,7 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="status" data-v="Available" aria-pressed="true">Available</button>
         <button class="chip" data-f="status" data-v="" aria-pressed="false">All statuses</button>
       </div>
-      <div class="group" role="group" aria-label="Deal">
+      <div class="group keep deal-g" role="group" aria-label="Deal">
         <button class="chip" data-f="deal" data-v="" aria-pressed="true">Rent &amp; sale</button>
         <button class="chip" data-f="deal" data-v="rent" aria-pressed="false">Rent</button>
         <button class="chip" data-f="deal" data-v="sale" aria-pressed="false">Sale</button>
@@ -305,7 +309,7 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="area" data-v="doha" aria-pressed="false">Doha</button>
       </div>
       <div class="group" role="group" aria-label="Property type" id="types"></div>
-      <div class="group" role="group" aria-label="Bedrooms">
+      <div class="group keep beds-g" role="group" aria-label="Bedrooms">
         <span>Beds</span>
         <button class="chip" data-f="bed" data-v="" aria-pressed="true">Any</button>
         <button class="chip" data-f="bed" data-v="0" aria-pressed="false">Studio</button>
@@ -576,7 +580,7 @@ function render(){
     if(res.length&&off.length===res.length){note.hidden=false;note.textContent=`${off[0].ref} is marked “${off[0].status}”, so it isn’t in the available list. Showing it anyway.`}
     else note.hidden=true;
   } else note.hidden=true;
-  { const n=[S.status!=="Available",S.deal,S.bed!=="",S.locs.length,S.use,S.types.length,S.web].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
+  { const n=[S.status!=="Available",S.locs.length,S.use,S.types.length,S.web].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
   $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.locs.length||S.use||S.web||S.area||S.types.length);
   { const v=S.sort+":"+S.dir, sel=$("#sort"); sel.value=[...sel.options].some(o=>o.value===v)?v:"custom"; }
   document.querySelectorAll("thead th.sort").forEach(th=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k; if(!refMode&&k===S.sort) th.dataset.dir=S.dir>0?"\u2191":"\u2193"; else delete th.dataset.dir;});
