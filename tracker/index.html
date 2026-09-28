@@ -101,7 +101,9 @@ tbody tr.row.live:hover td{background:var(--soft)}
 .ptype{margin-top:3px}
 .bed small{font-size:12px;font-weight:400;color:var(--muted);margin-left:3px}
 .loc1{font-weight:500}
-.projline{margin-top:3px}
+.projline{margin:0}
+td.c-rate{padding-right:28px}
+.deal{display:none}
 td.c-furn:empty::after{content:"\2014";color:var(--muted)}
 .furn{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
 .furn.FF{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -178,22 +180,22 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   table{min-width:0}
   thead{display:none}
   tbody tr.row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:0 8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
-  tbody tr.row:hover td,tbody tr.row.live td{background:none}
+  tbody tr.row:hover td,tbody tr.row.live td,tbody tr.row.live:hover td{background:none}
   tbody tr.row.live{box-shadow:inset 3px 0 0 var(--accent);background:var(--live)}
   tbody tr.row.live td:first-child{box-shadow:none}
   tbody td{padding:0;border:0;min-width:0}
-  td.c-bed{grid-column:1;grid-row:1;display:flex;align-items:baseline;gap:8px}
+  td.c-bed{grid-column:1;grid-row:1;display:flex;align-items:center;gap:8px}
   td.c-bed .ptype{margin:0}
+  .deal{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:6px;background:var(--soft);color:var(--accent);white-space:nowrap}
+  .deal.sale{background:var(--accent);color:var(--accent-ink)}
   td.c-furn{grid-column:2;grid-row:1}
   td.c-furn:empty::after{content:none}
-  td.c-rate{grid-column:3;grid-row:1;text-align:right}
-  td.c-rate .price,td.c-rate .sub{display:inline}
-  td.c-rate .sub{margin-left:6px;font-size:12px}
-  td.c-rate .sub::before{content:"\00b7\00a0"}
-  td.c-loc{grid-column:1/-1;margin-top:8px}
-  td.c-loc .loc1,td.c-loc .projline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  td.c-loc .projline{margin-top:2px;font-size:14px}
-  td.c-ref{grid-column:1/-1;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  td.c-rate{grid-column:3;grid-row:1;text-align:right;padding-right:0}
+  td.c-rate .sub{display:none}
+  td.c-comm{grid-column:1/-1;grid-row:2;margin-top:10px}
+  td.c-proj{grid-column:1/-1;grid-row:3;margin-top:2px;font-size:14px}
+  td.c-comm .loc1,td.c-proj .projline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  td.c-ref{grid-column:1/-1;grid-row:4;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
   .lst{flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px}
   .lst .st{margin-left:6px}
   .lst br{display:none}
@@ -322,11 +324,12 @@ body.locked{overflow:hidden}
   <div class="tablebox">
     <table>
       <thead><tr>
-        <th class="sort" data-k="beds">Bedrooms and type</th>
-        <th class="sort" data-k="loc">Location, project and unit</th>
-        <th>Furnishing</th>
+        <th class="sort" data-k="beds">Bedrooms</th>
+        <th class="sort" data-k="loc">Community</th>
         <th class="sort num" data-k="price">Rate (QAR)</th>
-        <th class="sort" data-k="ref">Listing</th>
+        <th class="sort" data-k="project">Project and unit</th>
+        <th>Furnishing</th>
+        <th class="sort" data-k="ref">Reference ID</th>
       </tr></thead>
       <tbody id="tb"></tbody>
     </table>
@@ -547,7 +550,7 @@ function render(){
   const tb=$("#tb");
   if(!res.length){
     const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.locs.length||S.area)tips.push("location"); if(S.types.length)tips.push("property type"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
-    tb.innerHTML=`<tr><td colspan="5"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
+    tb.innerHTML=`<tr><td colspan="6"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
     $("#more").hidden=true; syncHash(); return;
   }
   const show=res.slice(0,S.limit);
@@ -562,16 +565,17 @@ function render(){
     const where=parts.length?`<div class="loc1" title="${esc([aL,o.comm,o.sub].filter(Boolean).join(", "))}">${parts.join(", ")}${sub}</div>`:'<div class="loc1 sub">Location not set</div>';
     const proj=`<div class="projline">${hl(o.project,terms)}<span class="sub">${o.project?", ":""}${o.unit?`Unit ${hl(o.unit,terms)}`:"Unit not set"}</span></div>`;
     const main=`<tr class="row${url?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
-      <td class="c-bed"><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.ptype?`<div class="sub ptype">${hl(o.ptype,terms)}</div>`:""}</td>
-      <td class="c-loc">${where}${proj}</td>
-      <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
+      <td class="c-bed"><span class="deal ${o.deal}">${o.offplan?"Off-plan":o.deal==="rent"?"Rent":"Sale"}</span><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.ptype?`<div class="sub ptype">${hl(o.ptype,terms)}</div>`:""}</td>
+      <td class="c-comm">${where}</td>
       <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="sub">${typeLabel(o)}</div></td>
+      <td class="c-proj">${proj}</td>
+      <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
       <td class="c-ref"><div class="lst">
         <span><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<br><span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
         ${url?`<a class="cta" href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}View listing</a>`:""}
       </div></td>
     </tr>`;
-    const det=S.open===o.ref?`<tr class="detail"><td colspan="5"><dl class="dl">
+    const det=S.open===o.ref?`<tr class="detail"><td colspan="6"><dl class="dl">
       <div><dt>Project</dt><dd>${esc(o.project||"\u2014")}</dd></div>
       <div><dt>Unit</dt><dd>${esc(o.unit||"Not set in Salesforce")}</dd></div>
       <div><dt>Property type</dt><dd>${esc(o.ptype||"\u2014")}${o.ptypeGuess?' <span class="sub">(estimated from name)</span>':""}</dd></div>
@@ -593,7 +597,7 @@ function render(){
   if(target){
     const sim=similar(target);
     const what=[target.beds==null?"":target.beds===0?"Studio":target.beds+" bed",target.use==="com"?"commercial":"",target.deal==="rent"?"for rent":"for sale"].filter(Boolean).join(" ");
-    html+=`<tr class="sep"><td colspan="5"><b>Matching listings</b><span class="sub">${sim.length?`${sim.total>sim.length?`Closest ${sim.length} of ${fmt(sim.total)}`:fmt(sim.length)} available ${esc(what)}${target.loc?" in or around "+esc(target.loc):""}`:`No other available ${esc(what)} listings${target.loc?" in "+esc(target.loc):""} right now`}</span></td></tr>`;
+    html+=`<tr class="sep"><td colspan="6"><b>Matching listings</b><span class="sub">${sim.length?`${sim.total>sim.length?`Closest ${sim.length} of ${fmt(sim.total)}`:fmt(sim.length)} available ${esc(what)}${target.loc?" in or around "+esc(target.loc):""}`:`No other available ${esc(what)} listings${target.loc?" in "+esc(target.loc):""} right now`}</span></td></tr>`;
     html+=sim.map(o=>rowHTML(o,[])).join("");
   }
   tb.innerHTML=html;
