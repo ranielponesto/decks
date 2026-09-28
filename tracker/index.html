@@ -62,7 +62,7 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:10px
 
 /* Table */
 .tablebox{overflow-x:auto;margin:16px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
-table{width:100%;border-collapse:collapse;min-width:860px}
+table{width:100%;border-collapse:collapse;min-width:1000px}
 thead th{text-align:left;font-size:12px;font-weight:500;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
 thead th.sort{cursor:pointer;user-select:none}
 thead th.sort:hover{color:var(--ink)}
@@ -103,6 +103,7 @@ tbody tr.row.live:hover td{background:var(--soft)}
 .loc1{font-weight:500}
 .projline{margin:0}
 td.c-rate{padding-right:28px}
+td.c-agent{white-space:nowrap}
 .deal{display:none}
 td.c-furn:empty::after{content:"\2014";color:var(--muted)}
 .furn{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
@@ -195,7 +196,9 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   td.c-comm{grid-column:1/-1;grid-row:2;margin-top:10px}
   td.c-proj{grid-column:1/-1;grid-row:3;margin-top:2px;font-size:14px}
   td.c-comm .loc1,td.c-proj .projline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  td.c-ref{grid-column:1/-1;grid-row:4;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  td.c-agent{grid-column:1/-1;grid-row:4;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  td.c-agent::before{content:"Agent\00a0\00a0";font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  td.c-ref{grid-column:1/-1;grid-row:5;margin-top:6px}
   .lst{flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px}
   .lst .st{margin-left:6px}
   .lst br{display:none}
@@ -329,6 +332,7 @@ body.locked{overflow:hidden}
         <th class="sort num" data-k="price">Rate (QAR)</th>
         <th class="sort" data-k="project">Project and unit</th>
         <th>Furnishing</th>
+        <th class="sort" data-k="agent">Listing agent</th>
         <th class="sort" data-k="ref">Reference ID</th>
       </tr></thead>
       <tbody id="tb"></tbody>
@@ -550,7 +554,7 @@ function render(){
   const tb=$("#tb");
   if(!res.length){
     const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.locs.length||S.area)tips.push("location"); if(S.types.length)tips.push("property type"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
-    tb.innerHTML=`<tr><td colspan="6"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
+    tb.innerHTML=`<tr><td colspan="7"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
     $("#more").hidden=true; syncHash(); return;
   }
   const show=res.slice(0,S.limit);
@@ -570,12 +574,13 @@ function render(){
       <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="sub">${typeLabel(o)}</div></td>
       <td class="c-proj">${proj}</td>
       <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
+      <td class="c-agent">${o.agent?hl(o.agent,terms):'<span class="sub">\u2014</span>'}</td>
       <td class="c-ref"><div class="lst">
         <span><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<br><span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
         ${url?`<a class="cta" href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}View listing</a>`:""}
       </div></td>
     </tr>`;
-    const det=S.open===o.ref?`<tr class="detail"><td colspan="6"><dl class="dl">
+    const det=S.open===o.ref?`<tr class="detail"><td colspan="7"><dl class="dl">
       <div><dt>Project</dt><dd>${esc(o.project||"\u2014")}</dd></div>
       <div><dt>Unit</dt><dd>${esc(o.unit||"Not set in Salesforce")}</dd></div>
       <div><dt>Property type</dt><dd>${esc(o.ptype||"\u2014")}${o.ptypeGuess?' <span class="sub">(estimated from name)</span>':""}</dd></div>
@@ -597,7 +602,7 @@ function render(){
   if(target){
     const sim=similar(target);
     const what=[target.beds==null?"":target.beds===0?"Studio":target.beds+" bed",target.use==="com"?"commercial":"",target.deal==="rent"?"for rent":"for sale"].filter(Boolean).join(" ");
-    html+=`<tr class="sep"><td colspan="6"><b>Matching listings</b><span class="sub">${sim.length?`${sim.total>sim.length?`Closest ${sim.length} of ${fmt(sim.total)}`:fmt(sim.length)} available ${esc(what)}${target.loc?" in or around "+esc(target.loc):""}`:`No other available ${esc(what)} listings${target.loc?" in "+esc(target.loc):""} right now`}</span></td></tr>`;
+    html+=`<tr class="sep"><td colspan="7"><b>Matching listings</b><span class="sub">${sim.length?`${sim.total>sim.length?`Closest ${sim.length} of ${fmt(sim.total)}`:fmt(sim.length)} available ${esc(what)}${target.loc?" in or around "+esc(target.loc):""}`:`No other available ${esc(what)} listings${target.loc?" in "+esc(target.loc):""} right now`}</span></td></tr>`;
     html+=sim.map(o=>rowHTML(o,[])).join("");
   }
   tb.innerHTML=html;
