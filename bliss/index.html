@@ -697,6 +697,11 @@ const TYPES = {
   flipbook: { label:'Flipbook', long:'Interactive flipbook', col:'var(--c-brochure)' }
 };
 const ORDER  = ['brochure','flipbook','photo','carousel','story','reels','construction','gallery'];
+/* newest first: creatives are ordered by their most recent date (updated, else added),
+   newest at the top; ties keep type order. Used by the overview grid and the slide sequence. */
+const _MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function _dateKey(c){ const s=String(c.updated||c.added||'').trim(); const m=s.match(/^(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})$/); if(!m) return 0; return Number(m[3])*10000+(_MON[m[2].toLowerCase()]||0)*100+Number(m[1]); }
+function byNewest(list){ return list.map((c,i)=>[c,i]).sort((a,b)=>(_dateKey(b[0])-_dateKey(a[0]))||(a[1]-b[1])).map(x=>x[0]); }
 const SPEC   = { '4:5':'1080 × 1350', '1:1':'1080 × 1080', '9:16':'1080 × 1920', '16:9':'1920 × 1080' };
 const LIMITS = { primary:125, headline:40, description:30 };
 /* canonical category order for the photo gallery — sections render in this
@@ -1540,7 +1545,7 @@ function browseSlide(){
 
   function featSection(type, heading){
     if(!groups.includes(type)) return null;
-    const kids = CREATIVES.filter(c=>c.type===type);
+    const kids = byNewest(CREATIVES.filter(c=>c.type===type));
     const g = el(`<div class="bgroup" data-t="${type}">
       <div class="section-h">${esc(heading)} · ${kids.length} item${kids.length===1?'':'s'}</div>
       <div class="feat-grid"></div></div>`);
@@ -1576,7 +1581,7 @@ function browseSlide(){
      (stills → carousels → stories → reels → …); each thumb carries its type
      for the filter row and its own type colour */
   if(regularTypes.length){
-    const kids = regularTypes.flatMap(t=>CREATIVES.filter(c=>c.type===t));
+    const kids = byNewest(regularTypes.flatMap(t=>CREATIVES.filter(c=>c.type===t)));
     const g = el(`<div class="bgroup social" data-t="social">
       <div class="section-h" style="margin-top:6px">Social creatives · ${kids.length} ${kids.length===1?'creative':'creatives'}</div>
       <div class="bgrid"></div></div>`);
@@ -1972,7 +1977,13 @@ const stage=document.getElementById('stage'), slides=[];
 function add(node,id){ if(!node) return; if(id) node.dataset.cid=id; stage.appendChild(node); slides.push(node); }
 
 add(browseSlide());
-ORDER.forEach(t=>CREATIVES.filter(c=>c.type===t).forEach(c=>add(creativeSlide(c), c.id)));
+(function(){
+  const FEAT=['brochure','flipbook','gallery'];
+  const feat=ORDER.filter(t=>FEAT.includes(t)&&t!=='gallery').flatMap(t=>byNewest(CREATIVES.filter(c=>c.type===t)));
+  const social=byNewest(ORDER.filter(t=>!FEAT.includes(t)).flatMap(t=>CREATIVES.filter(c=>c.type===t)));
+  const gal=byNewest(CREATIVES.filter(c=>c.type==='gallery'));
+  [...feat,...social,...gal].forEach(c=>add(creativeSlide(c), c.id));
+})();
 /* Copy matrix only earns a slide when at least one creative carries ad copy;
    finished-artwork decks (copy baked into the design) skip it. */
 if(CREATIVES.some(c=>!['brochure','gallery'].includes(c.type) && (has(c.primary)||has(c.headline)||has(c.description)))) add(matrixSlide());
