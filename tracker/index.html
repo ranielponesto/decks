@@ -98,6 +98,7 @@ tbody tr.row.live:hover td{background:var(--soft)}
 .cta:hover{filter:brightness(1.12)}
 .cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .bed{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ptype{margin-top:3px}
 .bed small{font-size:12px;font-weight:400;color:var(--muted);margin-left:3px}
 .loc1{font-weight:500}
 .projline{margin-top:3px}
@@ -208,6 +209,13 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="deal" data-v="rent" aria-pressed="false">Rent</button>
         <button class="chip" data-f="deal" data-v="sale" aria-pressed="false">Sale</button>
       </div>
+      <div class="group" role="group" aria-label="Area">
+        <span>Area</span>
+        <button class="chip" data-f="area" data-v="" aria-pressed="true">All</button>
+        <button class="chip" data-f="area" data-v="pearl" aria-pressed="false">The Pearl</button>
+        <button class="chip" data-f="area" data-v="lusail" aria-pressed="false">Lusail</button>
+        <button class="chip" data-f="area" data-v="doha" aria-pressed="false">Doha</button>
+      </div>
       <div class="group" role="group" aria-label="Bedrooms">
         <span>Beds</span>
         <button class="chip" data-f="bed" data-v="" aria-pressed="true">Any</button>
@@ -220,6 +228,7 @@ body.locked{overflow:hidden}
       </div>
       <div class="group">
         <select id="loc" aria-label="Location"><option value="">All locations</option></select>
+        <select id="ptype" aria-label="Property type" hidden><option value="">All property types</option></select>
         <select id="use" aria-label="Property use">
           <option value="">Residential &amp; commercial</option>
           <option value="res">Residential</option>
@@ -252,7 +261,7 @@ body.locked{overflow:hidden}
   <div class="tablebox">
     <table>
       <thead><tr>
-        <th class="sort" data-k="beds">Bedrooms</th>
+        <th class="sort" data-k="beds">Bedrooms and type</th>
         <th class="sort" data-k="loc">Location, project and unit</th>
         <th>Furnishing</th>
         <th class="sort num" data-k="price">Rate (QAR)</th>
@@ -287,12 +296,21 @@ const savedTheme=store.get(THEMEKEY); if(savedTheme) root.dataset.theme=savedThe
 $("#theme").onclick=()=>{const dark=root.dataset.theme?root.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;root.dataset.theme=dark?"light":"dark";store.set(THEMEKEY,root.dataset.theme)};
 
 /* ---------- parsing (shared by embedded snapshot and uploaded exports) ---------- */
-const COLS={project:/project name/i,group:/leasing project/i,comm:/^comm/i,sub:/sub community/i,unit:/unit number/i,ref:/ref no/i,status:/^status$/i,beds:/bedroom/i,price:/listing price/i,agent:/owner name/i,rtype:/record type/i,portals:/portals/i,furn:/furnish/i,managed:/managed by/i};
+const COLS={project:/project name/i,group:/leasing project/i,comm:/^comm/i,sub:/sub community/i,unit:/unit number/i,ref:/ref no/i,status:/^status$/i,beds:/bedroom/i,price:/listing price/i,agent:/owner name/i,rtype:/record type/i,portals:/portals/i,furn:/furnish/i,ptype:/property type|unit type|property sub ?type/i,managed:/managed by/i};
 function furnCode(v){ v=String(v||"").trim().toLowerCase(); if(!v) return "";
   if(/^uf$|unfurn|not furn|^no$/.test(v)) return "UF";
   if(/^sf$|^pf$|semi|part/.test(v)) return "SF";
   if(/^ff$|fully|^furnished$|^yes$/.test(v)) return "FF"; return ""; }
 const FURN={FF:"Fully furnished",SF:"Semi or partly furnished",UF:"Unfurnished"};
+const AREAS={
+  pearl:{label:"The Pearl",re:/pearl|gewan|qanat/i},
+  lusail:{label:"Lusail",re:/lusail|marina district|fox hills|energy city|waterfront|erkyah|qetaifan|al kharaej|seef lusail|entertainment city|al khareej|burj damac marina|mamsha bay|^vera$|yasmeen city/i},
+  doha:{label:"Doha",list:["west bay","west bay lagoon","old airport road","fereej bin mahmoud","al mansoura","msheireb downtown doha","musheireb","al muntazah","najma","al sadd","abu hamour","salata","umm ghuwailina","al waab","al gharrafa","fereej bin omran","ain khaled","al ghanim","al maamoura","al duhail","salwa road","al jasra","doha al jadeed","al najada","ras abu aboud","al thumama","al nasr","al hilal","al aziziyah","al markhiya","al messila","madinat khalifa","onaiza","d-ring","corniche road","almuraikh","al muraikh","muaither area","izghawa","industrial area","al dafna","al hitmi","bin mahmoud","fereej abdel aziz","al nuaija","al matar al qadeem","al luqta","new salata","al rumeilah","al bidda","al sadd area","al mirqab","al mirqab al jadeed","b-ring road","c-ring","diplomatic area","fereej abdul aziz","fereej kulaib","jeliah","onaiza 65","mesaimeer","wadi al sail"]}
+};
+function areaOf(loc){ if(!loc) return ""; const l=loc.toLowerCase();
+  if(AREAS.pearl.re.test(l)) return "pearl"; if(AREAS.lusail.re.test(l)) return "lusail";
+  if(AREAS.doha.list.includes(l)) return "doha"; return ""; }
+function ptypeOf(v){ v=String(v||"").trim(); if(!v) return ""; return v.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()); }
 function parseTable(asOf,header,rows){
   const ix={};for(const k in COLS){ix[k]=header.findIndex(h=>h&&COLS[k].test(String(h).trim()))}
   if(ix.ref<0) throw new Error("This file has no \u201cListings Ref No.\u201d column. Export the All Listings report from Salesforce and try again.");
@@ -309,14 +327,14 @@ function parseTable(asOf,header,rows){
     const pr=parseFloat(String(g(r,"price")).replace(/[^\d.]/g,""));
     let unit=g(r,"unit"); if(unit==="0") unit="";
     const o={ref,refN:parseInt(ref.replace(/\D/g,""),10)||0,project,comm:g(r,"comm"),sub:g(r,"sub"),unit,status:g(r,"status"),beds,bedNote,
-      price:isFinite(pr)&&pr>0?pr:null,agent:g(r,"agent"),rtype,portals:g(r,"portals"),furn:furnCode(g(r,"furn")),managed:g(r,"managed"),
+      price:isFinite(pr)&&pr>0?pr:null,agent:g(r,"agent"),rtype,portals:g(r,"portals"),furn:furnCode(g(r,"furn")),ptype:ptypeOf(g(r,"ptype")),managed:g(r,"managed"),
       deal:/rent/i.test(rtype)?"rent":"sale",use:/commercial/i.test(rtype)?"com":"res",offplan:/off ?plan/i.test(rtype)};
     if(o.comm&&project){(commByProj[project]=commByProj[project]||{})[o.comm]=((commByProj[project]||{})[o.comm]||0)+1}
     out.push(o);
   }
   // fill missing community from the project's other listings
   for(const o of out){ if(!o.comm&&commByProj[o.project]){const c=commByProj[o.project];o.comm=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];o.commInferred=true} }
-  for(const o of out){ o.loc=o.comm||o.sub||""; o.hay=[o.ref,o.project,o.unit,o.comm,o.sub,o.agent].join(" \u0001 ").toLowerCase(); }
+  for(const o of out){ o.loc=o.comm||o.sub||""; o.area=areaOf(o.comm)||areaOf(o.sub); o.hay=[o.ref,o.project,o.unit,o.comm,o.sub,o.agent,o.ptype].join(" \u0001 ").toLowerCase(); }
   return {asOf:String(asOf||"").replace(/\s*\u2022.*$/,"").replace(/Arabia Standard Time\/AST/,"AST"),list:out};
 }
 function fromSheetArrays(aoa){
@@ -332,18 +350,27 @@ function fromSheetArrays(aoa){
 
 /* ---------- state ---------- */
 let DB,LOCS=[];
-const S={q:"",status:"Available",deal:"",bed:"",loc:"",use:"",web:"",sort:"refN",dir:-1,limit:100,open:null};
+const S={q:"",status:"Available",deal:"",bed:"",area:"",loc:"",ptype:"",use:"",web:"",sort:"refN",dir:-1,limit:100,open:null};
 function load(data,source){
   DB=data;
-  const cnt={};for(const o of DB.list){if(o.loc)cnt[o.loc]=(cnt[o.loc]||0)+1}
-  LOCS=Object.keys(cnt).sort((a,b)=>a.localeCompare(b));
-  const sel=$("#loc");const cur=S.loc;
-  sel.innerHTML='<option value="">All locations</option>'+LOCS.map(l=>`<option>${esc(l)}</option>`).join("");
-  sel.value=LOCS.includes(cur)?cur:"";S.loc=sel.value;
+  fillLocs();
+  const pt={};for(const o of DB.list){if(o.ptype)pt[o.ptype]=(pt[o.ptype]||0)+1}
+  const PT=Object.keys(pt).sort((a,b)=>pt[b]-pt[a]);
+  const ps=$("#ptype"); ps.hidden=!PT.length;
+  ps.innerHTML='<option value="">All property types</option>'+PT.map(x=>`<option>${esc(x)}</option>`).join("");
+  ps.value=PT.includes(S.ptype)?S.ptype:""; S.ptype=ps.value;
   $("#asof").textContent=(DB.asOf?"Salesforce export, "+DB.asOf.replace(/^as of\s*/i,"as of "):"Salesforce export")+(source==="upload"?" (loaded on this device)":"");
   render();
 }
 
+function fillLocs(){
+  if(!DB) return;
+  const cnt={};for(const o of DB.list){if(o.loc&&(!S.area||o.area===S.area))cnt[o.loc]=(cnt[o.loc]||0)+1}
+  LOCS=Object.keys(cnt).sort((a,b)=>a.localeCompare(b));
+  const sel=$("#loc");
+  sel.innerHTML=`<option value="">${S.area?"All of "+AREAS[S.area].label:"All locations"}</option>`+LOCS.map(l=>`<option>${esc(l)}</option>`).join("");
+  sel.value=LOCS.includes(S.loc)?S.loc:""; S.loc=sel.value;
+}
 /* ---------- helpers ---------- */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=n=>n.toLocaleString("en-US",{maximumFractionDigits:0});
@@ -373,7 +400,9 @@ function filter(){
     if(S.deal&&o.deal!==S.deal) return false;
     if(S.use&&o.use!==S.use) return false;
     if(S.web&&!webURL(o)) return false;
+    if(S.area&&o.area!==S.area) return false;
     if(S.loc&&o.loc!==S.loc) return false;
+    if(S.ptype&&o.ptype!==S.ptype) return false;
     if(S.bed!==""){const b=+S.bed; if(o.beds==null) return false; if(b===5?o.beds<5:o.beds!==b) return false;}
     if(refMode) return o.ref.toLowerCase()===refQ||o.ref.toLowerCase().startsWith(refQ);
     for(const t of terms) if(!o.hay.includes(t)) return false;
@@ -403,12 +432,12 @@ function render(){
     if(res.length&&off.length===res.length){note.hidden=false;note.textContent=`${off[0].ref} is marked “${off[0].status}”, so it isn’t in the available list. Showing it anyway.`}
     else note.hidden=true;
   } else note.hidden=true;
-  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.loc||S.use||S.web);
+  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.loc||S.use||S.web||S.area||S.ptype);
   { const v=S.sort+":"+S.dir, sel=$("#sort"); sel.value=[...sel.options].some(o=>o.value===v)?v:"custom"; }
   document.querySelectorAll("thead th.sort").forEach(th=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k; if(!refMode&&k===S.sort) th.dataset.dir=S.dir>0?"\u2191":"\u2193"; else delete th.dataset.dir;});
   const tb=$("#tb");
   if(!res.length){
-    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.loc)tips.push("location"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
+    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.loc||S.area)tips.push("location"); if(S.ptype)tips.push("property type"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
     tb.innerHTML=`<tr><td colspan="5"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
     $("#more").hidden=true; syncHash(); return;
   }
@@ -419,9 +448,9 @@ function render(){
     const url=webURL(o), avail=/^avail/i.test(o.status);
     const sub=o.sub&&o.sub!==o.comm&&o.comm?`<span class="sub">, ${hl(o.sub,terms)}</span>`:"";
     const where=o.loc?`<div class="loc1">${hl(o.comm||o.sub,terms)}${sub}</div>`:'<div class="loc1 sub">Location not set</div>';
-    const proj=`<div class="projline">${hl(o.project,terms)}<span class="sub">, ${o.unit?`Unit ${hl(o.unit,terms)}`:"Unit not set"}</span></div>`;
+    const proj=`<div class="projline">${hl(o.project,terms)}<span class="sub">${o.project?", ":""}${o.unit?`Unit ${hl(o.unit,terms)}`:"Unit not set"}</span></div>`;
     const main=`<tr class="row${url?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
-      <td class="c-bed"><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span></td>
+      <td class="c-bed"><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.ptype?`<div class="sub ptype">${hl(o.ptype,terms)}</div>`:""}</td>
       <td class="c-loc">${where}${proj}</td>
       <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:'<span class="sub">\u2014</span>'}</td>
       <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="sub">${typeLabel(o)}</div></td>
@@ -433,6 +462,7 @@ function render(){
     const det=S.open===o.ref?`<tr class="detail"><td colspan="5"><dl class="dl">
       <div><dt>Project</dt><dd>${esc(o.project||"\u2014")}</dd></div>
       <div><dt>Unit</dt><dd>${esc(o.unit||"Not set in Salesforce")}</dd></div>
+      <div><dt>Property type</dt><dd>${esc(o.ptype||"Not in the export")}</dd></div>
       <div><dt>Furnishing</dt><dd>${o.furn?FURN[o.furn]:"Not in the export"}</dd></div>
       <div><dt>Status</dt><dd>${esc(o.status||"\u2014")}</dd></div>
       <div><dt>Record type</dt><dd>${esc(o.rtype||"\u2014")}</dd></div>
@@ -468,6 +498,7 @@ function similar(t){
     if(t.comm&&o.comm===t.comm)s+=4;
     if(t.sub&&o.sub===t.sub)s+=2;
     if(t.furn&&o.furn===t.furn)s+=1;
+    if(t.ptype&&o.ptype===t.ptype)s+=2; else if(t.ptype&&o.ptype)s-=2;
     if(t.price&&o.price){const r=Math.abs(o.price-t.price)/t.price; s+=r<=.1?3:r<=.2?2:r<=.35?1:r>1?-2:0}
     return s};
   const near=pool.map(o=>({o,s:score(o),d:t.price&&o.price?Math.abs(o.price-t.price):Infinity}))
@@ -480,13 +511,13 @@ function similar(t){
 function syncHash(){
   const p=new URLSearchParams();
   if(S.q)p.set("q",S.q); if(S.status!=="Available")p.set("status",S.status||"all");
-  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.loc)p.set("loc",S.loc); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
+  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.loc)p.set("loc",S.loc); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.area)p.set("area",S.area); if(S.ptype)p.set("type",S.ptype); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
   const h=p.toString(); try{history.replaceState(null,"",h?"#"+h:location.pathname+location.search)}catch(e){}
 }
 function readHash(){
   const p=new URLSearchParams(location.hash.slice(1));
   S.q=p.get("q")||""; const st=p.get("status"); S.status=st==null?"Available":(st==="all"?"":st);
-  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.loc=p.get("loc")||""; S.use=p.get("use")||""; S.web=p.get("web")||"";
+  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.loc=p.get("loc")||""; S.use=p.get("use")||""; S.web=p.get("web")||""; S.area=AREAS[p.get("area")]?p.get("area"):""; S.ptype=p.get("type")||"";
   const so=(p.get("sort")||"refN:-1").split(":"); S.sort=["refN","project","beds","price","loc","agent"].includes(so[0])?so[0]:"refN"; S.dir=so[1]==="1"?1:-1;
   $("#q").value=S.q; $("#use").value=S.use; $("#loc").value=S.loc; syncChips();
 }
@@ -495,11 +526,12 @@ function syncChips(){ document.querySelectorAll(".chip").forEach(c=>c.setAttribu
 /* ---------- events ---------- */
 let t; $("#q").addEventListener("input",e=>{clearTimeout(t);t=setTimeout(()=>{S.q=e.target.value;S.limit=100;S.open=null;render()},90)});
 $("#q").addEventListener("keydown",e=>{if(e.key==="Escape"){e.target.value="";S.q="";render()}});
-document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{S[c.dataset.f]=c.dataset.v;S.limit=100;syncChips();render()});
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{S[c.dataset.f]=c.dataset.v;if(c.dataset.f==="area")fillLocs();S.limit=100;syncChips();render()});
 $("#loc").onchange=e=>{S.loc=e.target.value;S.limit=100;render()};
 $("#use").onchange=e=>{S.use=e.target.value;S.limit=100;render()};
+$("#ptype").onchange=e=>{S.ptype=e.target.value;S.limit=100;render()};
 $("#sort").onchange=e=>{if(e.target.value==="custom")return;const [k,d]=e.target.value.split(":");S.sort=k;S.dir=+d;S.limit=100;render()};
-$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",loc:"",use:"",web:"",limit:100,open:null});$("#q").value="";$("#loc").value="";$("#use").value="";syncChips();render();$("#q").focus()};
+$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",area:"",loc:"",ptype:"",use:"",web:"",limit:100,open:null});$("#q").value="";$("#use").value="";$("#ptype").value="";fillLocs();syncChips();render();$("#q").focus()};
 $("#more").onclick=()=>{S.limit+=100;render()};
 document.querySelectorAll("thead th.sort").forEach(th=>th.onclick=()=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k;
   if(S.sort===k)S.dir*=-1;else{S.sort=k;S.dir=(k==="refN")?-1:1}render()});
