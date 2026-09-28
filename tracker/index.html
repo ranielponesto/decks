@@ -62,7 +62,7 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:10px
 
 /* Table */
 .tablebox{overflow-x:auto;margin:16px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
-table{width:100%;border-collapse:collapse;min-width:1100px}
+table{width:100%;border-collapse:collapse;min-width:860px}
 thead th{text-align:left;font-size:12px;font-weight:500;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
 thead th.sort{cursor:pointer;user-select:none}
 thead th.sort:hover{color:var(--ink)}
@@ -97,6 +97,15 @@ tbody tr.row.live:hover td{background:var(--soft)}
 .cta{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:12.5px;font-weight:500;padding:6px 11px;border-radius:8px;white-space:nowrap}
 .cta:hover{filter:brightness(1.12)}
 .cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bed{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bed small{font-size:12px;font-weight:400;color:var(--muted);margin-left:3px}
+.loc1{font-weight:500}
+.projline{margin-top:3px}
+.furn{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
+.furn.FF{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.furn.SF{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+.lst{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.lst .st{font-size:11.5px}
 .sortby{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;color:var(--muted)}
 tr.detail td{background:var(--soft);padding:14px 14px 16px}
 .dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 24px;margin:0}
@@ -125,20 +134,18 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   tbody tr.row:hover td,tbody tr.row.live td{background:none}
   tbody tr.row.live{box-shadow:inset 3px 0 0 var(--accent);background:var(--live)}
   tbody tr.row.live td:first-child{box-shadow:none}
-  td.c-meta .cta{margin-left:auto}
   .sortby{margin-left:0}
   tbody td{padding:0;border:0}
-  td.c-ref{grid-column:1}
-  td.c-price{grid-column:2;grid-row:1;text-align:right}
-  td.c-proj{grid-column:1/-1}
-  td.c-loc{grid-column:1/-1}
-  td.c-beds,td.c-type,td.c-agent,td.c-st{display:inline}
-  td.c-meta{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-  td.c-hide{display:none}
+  td.c-bed{grid-column:1;grid-row:1}
+  td.c-rate{grid-column:2;grid-row:1;text-align:right}
+  td.c-loc{grid-column:1/-1;margin-top:4px}
+  td.c-furn{grid-column:1/-1;margin-top:8px}
+  td.c-furn:empty{display:none}
+  td.c-ref{grid-column:1/-1;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .lst{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}
   tr.detail{display:block;margin:-6px 0 8px}
   tr.detail td{display:block;border-radius:0 0 12px 12px}
 }
-@media (min-width:761px){ td.c-meta{display:none} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
@@ -226,15 +233,11 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   <div class="tablebox">
     <table>
       <thead><tr>
-        <th class="sort" data-k="ref">Reference</th>
-        <th class="sort" data-k="project">Project and unit</th>
-        <th class="sort" data-k="loc">Location</th>
-        <th class="sort num" data-k="beds">Beds</th>
-        <th>Type</th>
-        <th class="sort num" data-k="price">Price (QAR)</th>
-        <th class="sort" data-k="agent">Listed by</th>
-        <th>Website</th>
-        <th>Status</th>
+        <th class="sort" data-k="beds">Bedrooms</th>
+        <th class="sort" data-k="loc">Location, project and unit</th>
+        <th>Furnishing</th>
+        <th class="sort num" data-k="price">Rate (QAR)</th>
+        <th class="sort" data-k="ref">Listing</th>
       </tr></thead>
       <tbody id="tb"></tbody>
     </table>
@@ -256,7 +259,12 @@ const savedTheme=store.get(THEMEKEY); if(savedTheme) root.dataset.theme=savedThe
 $("#theme").onclick=()=>{const dark=root.dataset.theme?root.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;root.dataset.theme=dark?"light":"dark";store.set(THEMEKEY,root.dataset.theme)};
 
 /* ---------- parsing (shared by embedded snapshot and uploaded exports) ---------- */
-const COLS={project:/project name/i,group:/leasing project/i,comm:/^comm/i,sub:/sub community/i,unit:/unit number/i,ref:/ref no/i,status:/^status$/i,beds:/bedroom/i,price:/listing price/i,agent:/owner name/i,rtype:/record type/i,portals:/portals/i,managed:/managed by/i};
+const COLS={project:/project name/i,group:/leasing project/i,comm:/^comm/i,sub:/sub community/i,unit:/unit number/i,ref:/ref no/i,status:/^status$/i,beds:/bedroom/i,price:/listing price/i,agent:/owner name/i,rtype:/record type/i,portals:/portals/i,furn:/furnish/i,managed:/managed by/i};
+function furnCode(v){ v=String(v||"").trim().toLowerCase(); if(!v) return "";
+  if(/^uf$|unfurn|not furn|^no$/.test(v)) return "UF";
+  if(/^sf$|^pf$|semi|part/.test(v)) return "SF";
+  if(/^ff$|fully|^furnished$|^yes$/.test(v)) return "FF"; return ""; }
+const FURN={FF:"Fully furnished",SF:"Semi or partly furnished",UF:"Unfurnished"};
 function parseTable(asOf,header,rows){
   const ix={};for(const k in COLS){ix[k]=header.findIndex(h=>h&&COLS[k].test(String(h).trim()))}
   if(ix.ref<0) throw new Error("This file has no \u201cListings Ref No.\u201d column. Export the All Listings report from Salesforce and try again.");
@@ -273,7 +281,7 @@ function parseTable(asOf,header,rows){
     const pr=parseFloat(String(g(r,"price")).replace(/[^\d.]/g,""));
     let unit=g(r,"unit"); if(unit==="0") unit="";
     const o={ref,refN:parseInt(ref.replace(/\D/g,""),10)||0,project,comm:g(r,"comm"),sub:g(r,"sub"),unit,status:g(r,"status"),beds,bedNote,
-      price:isFinite(pr)&&pr>0?pr:null,agent:g(r,"agent"),rtype,portals:g(r,"portals"),managed:g(r,"managed"),
+      price:isFinite(pr)&&pr>0?pr:null,agent:g(r,"agent"),rtype,portals:g(r,"portals"),furn:furnCode(g(r,"furn")),managed:g(r,"managed"),
       deal:/rent/i.test(rtype)?"rent":"sale",use:/commercial/i.test(rtype)?"com":"res",offplan:/off ?plan/i.test(rtype)};
     if(o.comm&&project){(commByProj[project]=commByProj[project]||{})[o.comm]=((commByProj[project]||{})[o.comm]||0)+1}
     out.push(o);
@@ -372,26 +380,32 @@ function render(){
   const tb=$("#tb");
   if(!res.length){
     const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.loc)tips.push("location"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
-    tb.innerHTML=`<tr><td colspan="9"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
+    tb.innerHTML=`<tr><td colspan="5"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
     $("#more").hidden=true; syncHash(); return;
   }
   const show=res.slice(0,S.limit);
   tb.innerHTML=show.map(o=>{
     const unit=o.unit?`<div class="sub">Unit ${hl(o.unit,terms)}</div>`:"";
     const loc=o.loc?`${hl(o.comm||o.sub,terms)}${o.sub&&o.sub!==o.comm&&o.comm?`<div class="sub">${hl(o.sub,terms)}</div>`:""}`:'<span class="sub">\u2014</span>';
-    const main=`<tr class="row${webURL(o)?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
-      <td class="c-ref"><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></td>
-      <td class="c-proj"><div class="proj">${hl(o.project,terms)}</div>${unit}</td>
-      <td class="c-loc">${loc}</td>
-      <td class="num c-hide">${bedLabel(o)}</td>
-      <td class="c-hide"><span class="tag">${typeLabel(o)}</span></td>
-      <td class="num c-price"><span class="price">${priceHTML(o)}</span></td>
-      <td class="c-hide">${hl(o.agent,terms)}</td>
-      <td class="c-hide">${webURL(o)?`<a class="cta" href="${webURL(o)}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}View on website</a>`:'<span class="sub">\u2014</span>'}</td>
-      <td class="c-hide"><span class="st ${stClass(o.status)}">${esc(o.status)}</span></td>
-      <td class="c-meta"><span class="tag">${o.beds==null?"No beds listed":bedLabel(o)+(o.beds===0?"":" bed")}</span><span class="tag">${typeLabel(o)}</span><span class="st ${stClass(o.status)}">${esc(o.status)}</span>${webURL(o)?`<a class="cta" href="${webURL(o)}" target="_blank" rel="noopener">${WEBICON}View on website</a>`:""}</td>
+    const url=webURL(o), avail=/^avail/i.test(o.status);
+    const sub=o.sub&&o.sub!==o.comm&&o.comm?`<span class="sub">, ${hl(o.sub,terms)}</span>`:"";
+    const where=o.loc?`<div class="loc1">${hl(o.comm||o.sub,terms)}${sub}</div>`:'<div class="loc1 sub">Location not set</div>';
+    const proj=`<div class="projline">${hl(o.project,terms)}${o.unit?`<span class="sub">, Unit ${hl(o.unit,terms)}</span>`:""}</div>`;
+    const main=`<tr class="row${url?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
+      <td class="c-bed"><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span></td>
+      <td class="c-loc">${where}${proj}</td>
+      <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:'<span class="sub">\u2014</span>'}</td>
+      <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="sub">${typeLabel(o)}</div></td>
+      <td class="c-ref"><div class="lst">
+        <span><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<br><span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
+        ${url?`<a class="cta" href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}View listing</a>`:""}
+      </div></td>
     </tr>`;
-    const det=S.open===o.ref?`<tr class="detail"><td colspan="9"><dl class="dl">
+    const det=S.open===o.ref?`<tr class="detail"><td colspan="5"><dl class="dl">
+      <div><dt>Project</dt><dd>${esc(o.project||"\u2014")}</dd></div>
+      <div><dt>Unit</dt><dd>${esc(o.unit||"\u2014")}</dd></div>
+      <div><dt>Furnishing</dt><dd>${o.furn?FURN[o.furn]:"Not in the export"}</dd></div>
+      <div><dt>Status</dt><dd>${esc(o.status||"\u2014")}</dd></div>
       <div><dt>Record type</dt><dd>${esc(o.rtype||"\u2014")}</dd></div>
       <div><dt>Community</dt><dd>${esc(o.comm||"\u2014")}${o.commInferred?' <span class="sub">(from project)</span>':""}</dd></div>
       <div><dt>Sub community</dt><dd>${esc(o.sub||"\u2014")}</dd></div>
@@ -469,9 +483,9 @@ function boot(seed){
     if(String(u.asOf||"").replace(/\D/g,"").slice(0,14)>FEED_VERSION){initial=d;src="upload"}else store.del("lt-upload")}catch(e){store.del("lt-upload")}}
   readHash(); load(initial,src);
 }
-$("#tb").innerHTML='<tr><td colspan="9"><div class="empty">Loading listings\u2026</div></td></tr>';
+$("#tb").innerHTML='<tr><td colspan="5"><div class="empty">Loading listings\u2026</div></td></tr>';
 fetch("listings.json?v="+FEED_VERSION).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(boot)
-  .catch(()=>{$("#tb").innerHTML='<tr><td colspan="9"><div class="empty"><strong>Listings didn\u2019t load</strong>Refresh the page. If it keeps happening, the listings feed is missing from the site.</div></td></tr>'});
+  .catch(()=>{$("#tb").innerHTML='<tr><td colspan="5"><div class="empty"><strong>Listings didn\u2019t load</strong>Refresh the page. If it keeps happening, the listings feed is missing from the site.</div></td></tr>'});
 $("#foot").textContent="Search by reference (e.g. 9072), project, unit, area or agent. Press / to jump to search. Filters are saved in the link, so you can share a search.";
 window.addEventListener("hashchange",()=>{readHash();render()});
 })();
