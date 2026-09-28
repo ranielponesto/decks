@@ -152,12 +152,23 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   tr.detail td{display:block;border-radius:0 0 12px 12px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.gate{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+.gate[hidden]{display:none}
+.gate form{width:100%;max-width:360px}
+.gate h2{margin:0 0 6px;font-size:24px;font-weight:600;letter-spacing:-.02em}
+.gate p{margin:0 0 20px;color:var(--muted);font-size:14px}
+.gate input{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;font-size:18px;letter-spacing:.04em}
+.gate input:focus{border-color:var(--accent);outline:none}
+.gate button{width:100%;margin-top:10px;border:0;border-radius:12px;padding:13px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:15px;cursor:pointer}
+.gate button:disabled{opacity:.6;cursor:wait}
+.gate .err{color:#C0392B;font-size:13px;margin-top:10px;min-height:1.3em}
+body.locked{overflow:hidden}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 </head>
-<body>
+<body class="locked">
 <div class="wrap">
   <header class="top">
     <div class="brand">
@@ -170,6 +181,9 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
         Load new export
         <input id="file" type="file" accept=".xlsx,.xls,.csv" class="sr">
       </label>
+      <button class="btn" id="lock" title="Lock this device" aria-label="Lock">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </button>
       <button class="btn" id="theme" aria-label="Toggle theme">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
@@ -251,6 +265,15 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   <footer id="foot"></footer>
 </main>
 <div class="toast" id="toast" role="status"></div>
+<div class="gate" id="gate">
+  <form id="gateForm" autocomplete="off">
+    <h2>Listings tracker</h2>
+    <p>Enter this week’s passcode to view listings.</p>
+    <input id="pass" type="password" inputmode="text" autocomplete="current-password" aria-label="Passcode" placeholder="Passcode" required>
+    <button id="unlock" type="submit">Unlock</button>
+    <div class="err" id="gateErr" role="alert"></div>
+  </form>
+</div>
 
 <script>
 (function(){
@@ -371,6 +394,7 @@ function filter(){
 
 /* ---------- render ---------- */
 function render(){
+  if(!DB) return;
   const {res,terms,refMode}=filter();
   $("#n").textContent=fmt(res.length);
   $("#nl").textContent=res.length===1?"listing":"listings";
@@ -395,7 +419,7 @@ function render(){
     const url=webURL(o), avail=/^avail/i.test(o.status);
     const sub=o.sub&&o.sub!==o.comm&&o.comm?`<span class="sub">, ${hl(o.sub,terms)}</span>`:"";
     const where=o.loc?`<div class="loc1">${hl(o.comm||o.sub,terms)}${sub}</div>`:'<div class="loc1 sub">Location not set</div>';
-    const proj=`<div class="projline">${hl(o.project,terms)}${o.unit?`<span class="sub">, Unit ${hl(o.unit,terms)}</span>`:""}</div>`;
+    const proj=`<div class="projline">${hl(o.project,terms)}<span class="sub">, ${o.unit?`Unit ${hl(o.unit,terms)}`:"Unit not set"}</span></div>`;
     const main=`<tr class="row${url?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
       <td class="c-bed"><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span></td>
       <td class="c-loc">${where}${proj}</td>
@@ -408,7 +432,7 @@ function render(){
     </tr>`;
     const det=S.open===o.ref?`<tr class="detail"><td colspan="5"><dl class="dl">
       <div><dt>Project</dt><dd>${esc(o.project||"\u2014")}</dd></div>
-      <div><dt>Unit</dt><dd>${esc(o.unit||"\u2014")}</dd></div>
+      <div><dt>Unit</dt><dd>${esc(o.unit||"Not set in Salesforce")}</dd></div>
       <div><dt>Furnishing</dt><dd>${o.furn?FURN[o.furn]:"Not in the export"}</dd></div>
       <div><dt>Status</dt><dd>${esc(o.status||"\u2014")}</dd></div>
       <div><dt>Record type</dt><dd>${esc(o.rtype||"\u2014")}</dd></div>
@@ -514,9 +538,30 @@ function boot(seed){
     if(String(u.asOf||"").replace(/\D/g,"").slice(0,14)>FEED_VERSION){initial=d;src="upload"}else store.del("lt-upload")}catch(e){store.del("lt-upload")}}
   readHash(); load(initial,src);
 }
-$("#tb").innerHTML='<tr><td colspan="5"><div class="empty">Loading listings\u2026</div></td></tr>';
-fetch("listings.json?v="+FEED_VERSION).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(boot)
-  .catch(()=>{$("#tb").innerHTML='<tr><td colspan="5"><div class="empty"><strong>Listings didn\u2019t load</strong>Refresh the page. If it keeps happening, the listings feed is missing from the site.</div></td></tr>'});
+/* ---------- passcode gate: the feed is AES-GCM encrypted, key derived from the passcode ---------- */
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+let ENV=null;
+async function getEnv(){ if(ENV) return ENV; const r=await fetch("listings.enc?v="+FEED_VERSION,{cache:"no-cache"}); if(!r.ok) throw new Error("feed"); return ENV=await r.json(); }
+async function unlock(pw){
+  const env=await getEnv();
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  const key=await crypto.subtle.deriveKey({name:"PBKDF2",hash:"SHA-256",salt:b64(env.salt),iterations:env.iter},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+  let gz; try{ gz=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(env.iv)},key,b64(env.ct)); }catch(e){ const x=new Error("wrong"); x.wrong=true; throw x; }
+  const txt=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+  return JSON.parse(txt);
+}
+function opened(seed){ $("#gate").hidden=true; document.body.classList.remove("locked"); boot(seed); }
+$("#gateForm").addEventListener("submit",async e=>{
+  e.preventDefault(); const pw=$("#pass").value; if(!pw) return;
+  const btn=$("#unlock"); btn.disabled=true; btn.textContent="Checking\u2026"; $("#gateErr").textContent="";
+  try{ const seed=await unlock(pw); store.set("lt-pass",pw); opened(seed); }
+  catch(err){ $("#gateErr").textContent=err.wrong?"That passcode didn\u2019t work. Passcodes change weekly, so ask Marketing for this week\u2019s.":"Listings couldn\u2019t load. Check your connection and try again."; $("#pass").select(); }
+  finally{ btn.disabled=false; btn.textContent="Unlock"; }
+});
+$("#lock").onclick=()=>{ store.del("lt-pass"); location.reload(); };
+(async()=>{ const saved=store.get("lt-pass");
+  if(saved){ try{ opened(await unlock(saved)); return; }catch(e){ if(e.wrong){ store.del("lt-pass"); $("#gateErr").textContent="The passcode has changed. Enter this week\u2019s passcode."; } } }
+  $("#pass").focus(); })();
 $("#foot").textContent="Search by reference (e.g. 9072), project, unit, area or agent. Press / to jump to search. Filters are saved in the link, so you can share a search.";
 window.addEventListener("hashchange",()=>{readHash();render()});
 })();
