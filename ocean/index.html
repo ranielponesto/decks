@@ -646,7 +646,7 @@ const CAMPAIGN = {
         "label": "Dyar Al Haram",
         "href": "../dyaralharam/",
         "dir": "dyaralharam",
-        "blurb": "Brochures (EN + AR) · investment summaries · 2 online flipbooks · 2 event posts · 6 carousels · 2 stories · 10 films · 56-photo gallery",
+        "blurb": "Brochures (EN + AR) · investment summaries · 2 online flipbooks · 2 event posts · 6 carousels · 2 stories · 11 films · 56-photo gallery",
         "status": "live"
       },
       {
@@ -2047,7 +2047,7 @@ function browseSlide(){
      (stills → carousels → stories → reels → …); each thumb carries its type
      for the filter row and its own type colour */
   if(regularTypes.length){
-    const kids = byNewest(regularTypes.flatMap(t=>CREATIVES.filter(c=>c.type===t)));
+    const kids = byNewest(CREATIVES.filter(c=>regularTypes.includes(c.type)));  /* same-day ties follow CREATIVES order, newest entries placed first */
     const g = el(`<div class="bgroup social" data-t="social">
       <div class="section-h" style="margin-top:6px">Social creatives · ${kids.length} ${kids.length===1?'creative':'creatives'}</div>
       <div class="bgrid"></div></div>`);
@@ -2446,7 +2446,7 @@ add(browseSlide());
 (function(){
   const FEAT=['brochure','flipbook','gallery'];
   const feat=ORDER.filter(t=>FEAT.includes(t)&&t!=='gallery').flatMap(t=>byNewest(CREATIVES.filter(c=>c.type===t)));
-  const social=byNewest(ORDER.filter(t=>!FEAT.includes(t)).flatMap(t=>CREATIVES.filter(c=>c.type===t)));
+  const social=byNewest(CREATIVES.filter(c=>ORDER.includes(c.type)&&!FEAT.includes(c.type)));
   const gal=byNewest(CREATIVES.filter(c=>c.type==='gallery'));
   [...feat,...social,...gal].forEach(c=>add(creativeSlide(c), c.id));
 })();
