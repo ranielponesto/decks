@@ -67,12 +67,15 @@ thead th{text-align:left;font-size:12px;font-weight:500;color:var(--muted);paddi
 thead th.sort{cursor:pointer;user-select:none}
 thead th.sort:hover{color:var(--ink)}
 thead th[data-dir]::after{content:attr(data-dir);margin-left:4px;color:var(--ink)}
-tbody td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody td{padding:16px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody td:first-child{padding-left:18px}
+tbody td:last-child{padding-right:18px}
 tbody tr.row{cursor:pointer}
 tbody tr.row:hover td{background:var(--soft)}
 tbody tr:last-child td{border-bottom:0}
 td.c-ref{white-space:nowrap}
-.ref{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ref{display:inline-block;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.01em;white-space:nowrap;background:var(--soft);padding:4px 9px;border-radius:7px;font-size:13.5px}
+.refwrap{display:inline-flex;align-items:center;gap:2px;flex-wrap:nowrap}
 .copy{border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;margin-left:2px;border-radius:6px;vertical-align:-2px}
 .copy:hover{color:var(--ink);background:var(--soft)}
 .web{color:var(--accent);display:inline-flex;align-items:center;gap:4px;font-size:12px;text-decoration:none;border-radius:6px;padding:2px 4px;vertical-align:-1px}
@@ -83,7 +86,7 @@ dd a{color:var(--accent)}
 .sub{color:var(--muted);font-size:13px}
 .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 th.num{text-align:right}
-.price{font-weight:600}
+.price{font-weight:600;font-size:16px;letter-spacing:-.01em}
 .price small{font-weight:400;color:var(--muted)}
 .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;background:var(--soft);white-space:nowrap}
 .st{font-size:12px;white-space:nowrap}
@@ -94,22 +97,33 @@ mark{background:var(--hit);color:inherit;border-radius:3px;padding:0 1px}
 tbody tr.row.live td{background:var(--live)}
 tbody tr.row.live td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 tbody tr.row.live:hover td{background:var(--soft)}
-.cta{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:12.5px;font-weight:500;padding:6px 11px;border-radius:8px;white-space:nowrap}
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:8px;white-space:nowrap;letter-spacing:.01em}
 .cta:hover{filter:brightness(1.12)}
 .cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.bed{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-.ptype{margin-top:3px}
+.bed{display:block;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.2}
+.mic{font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.ptype{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px;white-space:nowrap}
 .bed small{font-size:12px;font-weight:400;color:var(--muted);margin-left:3px}
-.loc1{font-weight:500}
-.projline{margin:0}
+.loc1{font-weight:500;font-size:15px}
+.c-comm .sub,.c-proj .sub{font-size:12.5px;margin-top:2px}
+.projline{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.pname{font-weight:500}
+.unit{font-size:12px;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:2px 7px;white-space:nowrap;color:var(--ink)}
+.unit.none{border-style:dashed;color:var(--muted);background:none}
 td.c-rate{padding-right:28px}
 td.c-agent{white-space:nowrap}
+.agent{display:inline-flex;align-items:center;gap:9px}
+.av{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.02em;flex:none;background:hsl(var(--h) 38% 90%);color:hsl(var(--h) 45% 28%)}
+:root[data-theme="dark"] .av{background:hsl(var(--h) 28% 26%);color:hsl(var(--h) 45% 86%)}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .av{background:hsl(var(--h) 28% 26%);color:hsl(var(--h) 45% 86%)} }
+.aname{font-weight:500}
 .deal{display:none}
 td.c-furn:empty::after{content:"\2014";color:var(--muted)}
+.furn.mob{display:none}
 .furn{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
 .furn.FF{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .furn.SF{background:var(--soft);border-color:var(--accent);color:var(--accent)}
-.lst{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.lst{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .lst .st{font-size:11.5px}
 .ms{position:relative}
 .ms-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;font-size:13px;cursor:pointer;min-width:170px;max-width:260px;color:var(--ink)}
@@ -180,25 +194,40 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   .tablebox{background:none;border:0;border-radius:0;overflow:visible;margin-top:12px}
   table{min-width:0}
   thead{display:none}
-  tbody tr.row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:0 8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+  tbody tr.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:0 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px 12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
   tbody tr.row:hover td,tbody tr.row.live td,tbody tr.row.live:hover td{background:none}
-  tbody tr.row.live{box-shadow:inset 3px 0 0 var(--accent);background:var(--live)}
+  tbody tr.row.live{box-shadow:inset 3px 0 0 var(--accent),0 1px 2px rgba(0,0,0,.04);background:var(--live)}
   tbody tr.row.live td:first-child{box-shadow:none}
+  .sortby{margin-left:0}
   tbody td{padding:0;border:0;min-width:0}
-  td.c-bed{grid-column:1;grid-row:1;display:flex;align-items:center;gap:8px}
-  td.c-bed .ptype{margin:0}
-  .deal{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:6px;background:var(--soft);color:var(--accent);white-space:nowrap}
+  tbody td:first-child,tbody td:last-child{padding:0}
+  /* line 1: Rent/Sale, beds, type, furnishing, with the rate on the right */
+  td.c-bed{grid-column:1;grid-row:1;display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow:hidden}
+  .deal{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;flex:none;border-radius:6px;background:var(--soft);color:var(--accent);white-space:nowrap}
   .deal.sale{background:var(--accent);color:var(--accent-ink)}
-  td.c-furn{grid-column:2;grid-row:1}
+  td.c-bed .bed{display:inline-block;font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:6px;padding:3px 7px;line-height:1.2;flex:none}
+  td.c-bed .bed small{font-size:12px;margin-left:3px}
+  td.c-bed .ptype{margin:0;padding:3px 7px;font-size:12px;flex:none}
+  td.c-furn{display:none}
+  .furn.mob{display:inline-block;padding:3px 7px;flex:none}
   td.c-furn:empty::after{content:none}
-  td.c-rate{grid-column:3;grid-row:1;text-align:right;padding-right:0}
-  td.c-rate .sub{display:none}
-  td.c-comm{grid-column:1/-1;grid-row:2;margin-top:10px}
-  td.c-proj{grid-column:1/-1;grid-row:3;margin-top:2px;font-size:14px}
-  td.c-comm .loc1,td.c-proj .projline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  td.c-agent{grid-column:1/-1;grid-row:4;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  td.c-agent::before{content:"Agent\00a0\00a0";font-size:11px;text-transform:uppercase;letter-spacing:.05em}
-  td.c-ref{grid-column:1/-1;grid-row:5;margin-top:6px}
+  td.c-rate{grid-column:2;grid-row:1;text-align:right;padding-right:0;align-self:center}
+  td.c-rate .price{font-size:16px}
+  td.c-rate .mic{display:none}
+  /* line 2 and 3: project with unit, then community */
+  td.c-proj{grid-column:1/-1;grid-row:2;margin-top:12px}
+  td.c-proj .pname{font-size:16px;font-weight:600;letter-spacing:-.01em}
+  td.c-comm{grid-column:1/-1;grid-row:3;margin-top:4px;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+  td.c-comm .loc1{font-size:14px;font-weight:500}
+  td.c-comm .sub{margin:0}
+  td.c-comm .sub::before{content:"\00b7\00a0"}
+  /* footer: agent left, reference and website button right */
+  td.c-agent{grid-column:1/-1;grid-row:4;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  td.c-agent .aname{font-size:13px}
+  td.c-ref{grid-column:1/-1;grid-row:5;margin-top:10px}
+  .lst{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .lst .cta{padding:9px 14px}
+  .lst .st{margin-left:6px}
   .lst{flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px}
   .lst .st{margin-left:6px}
   .lst br{display:none}
@@ -559,24 +588,24 @@ function render(){
   }
   const show=res.slice(0,S.limit);
   const rowHTML=(o,terms)=>{
-    const unit=o.unit?`<div class="sub">Unit ${hl(o.unit,terms)}</div>`:"";
     const loc=o.loc?`${hl(o.comm||o.sub,terms)}${o.sub&&o.sub!==o.comm&&o.comm?`<div class="sub">${hl(o.sub,terms)}</div>`:""}`:'<span class="sub">\u2014</span>';
     const url=webURL(o), avail=/^avail/i.test(o.status);
     const aL=o.area?AREAS[o.area].label:"", main1=o.comm||o.sub;
-    const parts=[]; if(aL&&!(main1||"").toLowerCase().includes(aL.toLowerCase().replace(/^the /,""))) parts.push(esc(aL));
-    if(main1) parts.push(hl(main1,terms));
-    const sub=o.sub&&o.comm&&o.sub!==o.comm?`<span class="sub">, ${hl(o.sub,terms)}</span>`:"";
-    const where=parts.length?`<div class="loc1" title="${esc([aL,o.comm,o.sub].filter(Boolean).join(", "))}">${parts.join(", ")}${sub}</div>`:'<div class="loc1 sub">Location not set</div>';
-    const proj=`<div class="projline">${hl(o.project,terms)}<span class="sub">${o.project?", ":""}${o.unit?`Unit ${hl(o.unit,terms)}`:"Unit not set"}</span></div>`;
+    const l2=[aL&&!(main1||"").toLowerCase().includes(aL.toLowerCase().replace(/^the /,""))?esc(aL):"", o.sub&&o.comm&&o.sub!==o.comm?hl(o.sub,terms):""].filter(Boolean);
+    const where=main1?`<div class="loc1">${hl(main1,terms)}</div>${l2.length?`<div class="sub">${l2.join(", ")}</div>`:""}`:'<div class="loc1 sub">Location not set</div>';
+    const unit=o.unit?`<span class="unit">${hl(o.unit,terms)}</span>`:'<span class="unit none">No unit</span>';
+    const proj=`<div class="projline"><span class="pname">${o.project?hl(o.project,terms):'<span class="sub">Project not set</span>'}</span>${unit}</div>`;
+    const ini=(o.agent||"").split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?";
+    const hue=[...(o.agent||"")].reduce((h,c)=>(h*31+c.charCodeAt(0))%360,7);
     const main=`<tr class="row${url?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
-      <td class="c-bed"><span class="deal ${o.deal}">${o.offplan?"Off-plan":o.deal==="rent"?"Rent":"Sale"}</span><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.ptype?`<div class="sub ptype">${hl(o.ptype,terms)}</div>`:""}</td>
+      <td class="c-bed"><span class="deal ${o.deal}">${o.offplan?"Off-plan":o.deal==="rent"?"Rent":"Sale"}</span><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.ptype?`<span class="ptype">${hl(o.ptype,terms)}</span>`:""}${o.furn?`<span class="furn mob ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
       <td class="c-comm">${where}</td>
-      <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="sub">${typeLabel(o)}</div></td>
+      <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="mic">${typeLabel(o)}</div></td>
       <td class="c-proj">${proj}</td>
       <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
-      <td class="c-agent">${o.agent?hl(o.agent,terms):'<span class="sub">\u2014</span>'}</td>
+      <td class="c-agent"><span class="agent"><span class="av" style="--h:${hue}">${esc(ini)}</span><span class="aname">${o.agent?hl(o.agent,terms):'<span class="sub">\u2014</span>'}</span></span></td>
       <td class="c-ref"><div class="lst">
-        <span><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<br><span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
+        <span class="refwrap"><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
         ${url?`<a class="cta" href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}View listing</a>`:""}
       </div></td>
     </tr>`;
