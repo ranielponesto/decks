@@ -73,7 +73,7 @@ def vcard(a, c, url):
     if wa and wa != a.get("phone"): L.append(f"TEL;TYPE=CELL:{wa}")
     if c.get("sales_phone"): L.append(f"TEL;TYPE=WORK,VOICE:{c['sales_phone']}")
     if a.get("email"): L.append(f"EMAIL;TYPE=INTERNET,WORK:{a['email']}")
-    L.append(f"URL:{c.get('website') or 'https://capstoneproperty.com'}")
+    L.append(f"URL:{c.get('website') or 'https://www.capstoneproperty.com'}")
     if c.get("address"): L.append(f"ADR;TYPE=WORK:;;{esc(c['address'])};;;;")
     for k, v in (a.get("socials") or {}).items():
         if v and k in SOCIAL:
@@ -120,7 +120,7 @@ def page(a, c, url, qr_svg):
 
     comp = []
     if c.get("sales_phone"): comp.append(row(f"tel:{c['sales_phone']}", "headset", "Sales line", "خط المبيعات", fmt_qa(c["sales_phone"]), ext=False))
-    if c.get("website"): comp.append(row(c["website"], "globe", "Website", "الموقع الإلكتروني", re.sub(r"^https?://(www\.)?", "", c["website"]).rstrip("/")))
+    if c.get("website"): comp.append(row(c["website"], "globe", "Website", "الموقع الإلكتروني", re.sub(r"^https?://", "", c["website"]).rstrip("/")))
     if c.get("address"): comp.append(row(c.get("maps_url") or f"https://maps.google.com/?q={urllib.parse.quote(c['address'])}", "pin", "Office", "المكتب", c["address"], c.get("address_ar") or c["address"]))
     for k, v in (c.get("socials") or {}).items():
         v = clean_handle(v)
