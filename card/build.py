@@ -73,13 +73,11 @@ def vcard(a, c, url):
     if wa and wa != a.get("phone"): L.append(f"TEL;TYPE=CELL:{wa}")
     if c.get("sales_phone"): L.append(f"TEL;TYPE=WORK,VOICE:{c['sales_phone']}")
     if a.get("email"): L.append(f"EMAIL;TYPE=INTERNET,WORK:{a['email']}")
-    L.append(f"URL:{url}")
-    if c.get("website"): L.append(f"URL;TYPE=WORK:{c['website']}")
+    L.append(f"URL:{c.get('website') or 'https://capstoneproperty.com'}")
     if c.get("address"): L.append(f"ADR;TYPE=WORK:;;{esc(c['address'])};;;;")
     for k, v in (a.get("socials") or {}).items():
         if v and k in SOCIAL:
             L.append(f"X-SOCIALPROFILE;TYPE={k}:{SOCIAL[k][2](clean_handle(v))}")
-    L.append(f"NOTE:{esc(c['name'])} property consultant. Digital card: {url}")
     L.append("END:VCARD")
     return "\r\n".join(L) + "\r\n"
 
