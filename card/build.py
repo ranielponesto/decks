@@ -130,6 +130,19 @@ def page(a, c, url, qr_svg):
     comp_html = (f'<section class="grp"><h2 data-en="{E(c["name"])}" data-ar="{E(c.get("name_ar") or c["name"])}">{E(c["name"])}</h2>{"".join(comp)}</section>'
                  if comp else "")
 
+    links = []
+    for k, v in (a.get("socials") or {}).items():
+        v = clean_handle(v)
+        if v and k in SOCIAL:
+            links.append((SOCIAL[k][2](v), k, SOCIAL[k][0]))
+    if c.get("website"): links.append((c["website"], "globe", "Website"))
+    for k, v in (c.get("socials") or {}).items():
+        v = clean_handle(v)
+        if v and k in SOCIAL:
+            links.append((SOCIAL[k][2](v), k, c["name"] + " " + SOCIAL[k][0]))
+    icons_html = ('<nav class="icons">' + "".join(
+        f'<a class="icb" href="{E(h)}" target="_blank" rel="noopener" aria-label="{E(l)}" title="{E(l)}">{icon(i)}</a>' for h, i, l in links)
+        + '</nav>') if links else ""
     desc = f"{a['name']} · {a.get('title','')} at {c['name']}"
     photo_hero = (f'<img class="hp" src="{E(a["photo"])}" alt="{E(a["name"])}">' if a.get("photo")
                   else f'<span class="hm" aria-hidden="true">{E(initials)}</span>')
@@ -186,7 +199,11 @@ h1{{font-weight:400;font-size:clamp(26px,min(9vw,4.6svh),40px);line-height:1.04;
 .rl{{flex:none;font-size:clamp(14px,1.9svh,15px)}}
 .rv{{margin-inline-start:auto;unicode-bidi:isolate;font-size:14px;color:var(--sub);text-align:end;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}}
 @media (hover:hover){{.row:hover .rv{{color:#fff}}}}
-.tools{{padding-top:clamp(6px,1.6svh,22px);display:flex;justify-content:center;gap:8px}}
+.icons{{margin-top:clamp(16px,3.2svh,32px);display:flex;justify-content:center;gap:14px}}
+.icb{{width:clamp(46px,6.4svh,54px);height:clamp(46px,6.4svh,54px);border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--gold);transition:background .2s,color .2s}}
+.icb .ic{{width:22px;height:22px}}
+@media (hover:hover){{.icb:hover{{background:rgba(255,255,255,.06);color:#fff}}}}
+.tools{{margin-top:clamp(4px,1.2svh,14px);padding-top:clamp(6px,1.6svh,22px);display:flex;justify-content:center;gap:8px}}
 .tool{{display:flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:99px;background:transparent;color:var(--sub);font:400 14px/1 var(--f);cursor:pointer;transition:color .2s,background .2s}}
 [dir=rtl] .tool{{font-family:var(--fa)}}
 .tool .ic{{width:18px;height:18px}}
@@ -224,8 +241,7 @@ a:focus-visible,button:focus-visible{{outline:2px solid var(--gold);outline-offs
    <a class="btn" href="contact.vcf">{icon("save")}<span data-en="Save contact" data-ar="حفظ جهة الاتصال">Save contact</span></a>
    <div class="pair">{"".join(actions)}</div>
   </div>
-  {soc_html}
-  {comp_html}
+  {icons_html}
   <div class="tools">
    <button class="tool" type="button" id="qrb">{icon("qr")}<span data-en="QR code" data-ar="رمز QR">QR code</span></button>
    <button class="tool" type="button" id="shb">{icon("share")}<span data-en="Share card" data-ar="مشاركة البطاقة">Share card</span></button>
