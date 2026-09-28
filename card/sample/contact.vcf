@@ -1,0 +1,15 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Agent;Sample;;;
+FN:Sample Agent
+ORG:Capstone Property
+TITLE:Senior Property Consultant
+TEL;TYPE=CELL,VOICE:+97450000000
+TEL;TYPE=WORK,VOICE:+97430473333
+EMAIL;TYPE=INTERNET,WORK:agent@example.com
+URL:https://ranielponesto.github.io/decks/card/sample/
+X-SOCIALPROFILE;TYPE=instagram:https://www.instagram.com/capstone.sample
+X-SOCIALPROFILE;TYPE=tiktok:https://www.tiktok.com/@capstone.sample
+X-SOCIALPROFILE;TYPE=linkedin:https://www.linkedin.com/in/sample
+NOTE:Capstone Property property consultant. Digital card: https://ranielponesto.github.io/decks/card/sample/
+END:VCARD

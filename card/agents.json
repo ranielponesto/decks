@@ -1,0 +1,34 @@
+{
+  "base_url": "https://ranielponesto.github.io/decks/card/",
+  "company": {
+    "name": "Capstone Property",
+    "name_ar": "كابستون العقارية",
+    "sales_phone": "+97430473333",
+    "website": "",
+    "address": "",
+    "address_ar": "",
+    "maps_url": "",
+    "socials": {}
+  },
+  "agents": [
+    {
+      "slug": "sample",
+      "name": "Sample Agent",
+      "name_ar": "اسم الوكيل",
+      "title": "Senior Property Consultant",
+      "title_ar": "مستشار عقاري أول",
+      "phone": "+97450000000",
+      "whatsapp": "",
+      "email": "agent@example.com",
+      "photo": "",
+      "license": "",
+      "languages": ["English", "Arabic"],
+      "languages_ar": ["الإنجليزية", "العربية"],
+      "socials": {
+        "instagram": "capstone.sample",
+        "tiktok": "capstone.sample",
+        "linkedin": "https://www.linkedin.com/in/sample"
+      }
+    }
+  ]
+}
