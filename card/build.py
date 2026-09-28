@@ -155,10 +155,10 @@ def page(a, c, url, qr_svg):
 html{{background:#040F17;-webkit-text-size-adjust:100%}}
 body{{min-height:100svh;font-family:var(--f);color:var(--txt);background:#040F17;display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0)}}
 [dir=rtl] body,[dir=rtl] button{{font-family:var(--fa)}}
-.card{{width:100%;max-width:440px;min-height:100svh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}}
-@media (min-width:560px){{body{{padding:48px 0}}.card{{min-height:0;border-radius:32px;box-shadow:0 40px 100px rgba(0,0,0,.55)}}}}
-.hero{{position:relative;aspect-ratio:1/1.08;background:#0B3042;overflow:hidden}}
-.hp{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0}}
+.card{{width:100%;max-width:440px;height:100vh;height:100svh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}}
+@media (min-width:560px) and (min-height:700px){{body{{align-items:center}}.card{{height:min(900px,calc(100svh - 64px));border-radius:32px;box-shadow:0 40px 100px rgba(0,0,0,.55)}}}}
+.hero{{position:relative;flex:1 1 0;min-height:110px;background:#0B3042;overflow:hidden}}
+.hp{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}}
 .hm{{position:absolute;inset:0;display:grid;place-items:center;font:300 88px/1 var(--f);color:var(--gold)}}
 .hero::after{{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,26,38,.55) 0,rgba(7,26,38,0) 22%,rgba(7,26,38,0) 55%,var(--bg) 100%)}}
 .top{{position:absolute;z-index:2;inset:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:calc(20px + env(safe-area-inset-top,0px)) 22px 0}}
@@ -166,32 +166,35 @@ body{{min-height:100svh;font-family:var(--f);color:var(--txt);background:#040F17
 [dir=rtl] .logo{{-webkit-mask-position:right center;mask-position:right center}}
 .lang{{font:400 13px/1 var(--fa);color:#fff;background:rgba(7,26,38,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:8px 14px;cursor:pointer}}
 [dir=rtl] .lang{{font-family:var(--f)}}
-.body{{position:relative;z-index:2;margin-top:-72px;padding:0 24px 28px;flex:1;display:flex;flex-direction:column}}
-h1{{font-weight:400;font-size:clamp(32px,9vw,40px);line-height:1.04;letter-spacing:-.025em}}
+.body{{position:relative;z-index:2;flex:none;margin-top:calc(-1 * clamp(48px,8svh,76px));padding:0 clamp(18px,6vw,26px) clamp(12px,2.2svh,24px);display:flex;flex-direction:column}}
+h1{{font-weight:400;font-size:clamp(26px,min(9vw,4.6svh),40px);line-height:1.04;letter-spacing:-.025em}}
 [dir=rtl] h1{{letter-spacing:0;line-height:1.3}}
-.ttl{{margin-top:10px;font-size:15px;font-weight:300;color:var(--gold);letter-spacing:.01em}}
+.ttl{{margin-top:clamp(4px,1svh,10px);font-size:clamp(13px,1.8svh,15px);font-weight:300;color:var(--gold);letter-spacing:.01em}}
 .meta{{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--sub)}}
-.cta{{margin-top:30px;display:grid;gap:10px}}
-.btn{{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;border-radius:99px;font:500 16px/1 inherit;font-family:inherit;text-decoration:none;color:#fff;border:1px solid var(--line);background:transparent;transition:background .2s,transform .15s}}
+.cta{{margin-top:clamp(12px,2.8svh,30px);display:grid;gap:clamp(6px,1.1svh,10px)}}
+.btn{{display:flex;align-items:center;justify-content:center;gap:10px;height:clamp(42px,6.4svh,56px);border-radius:99px;font:500 clamp(14px,1.9svh,16px)/1 inherit;font-family:inherit;text-decoration:none;color:#fff;border:1px solid var(--line);background:transparent;transition:background .2s,transform .15s}}
 .btn:active{{transform:scale(.985)}}
 .btn .ic{{width:20px;height:20px}}
 .btn.wa{{background:#fff;color:var(--bg);border-color:#fff}}
 .btn.wa .ic{{color:#1DAA53;width:22px;height:22px}}
 @media (hover:hover){{.btn:hover{{background:rgba(255,255,255,.06)}}.btn.wa:hover{{background:#EEF2F4}}}}
-.pair{{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px}}
-.grp{{margin-top:34px}}
-.grp h2{{font-size:13px;font-weight:400;color:var(--sub);padding-bottom:6px}}
-.row{{display:flex;align-items:center;gap:14px;padding:16px 0;color:#fff;text-decoration:none;border-bottom:1px solid var(--line)}}
+.pair{{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:clamp(6px,1.1svh,10px)}}
+.grp{{margin-top:clamp(10px,2.4svh,30px)}}
+.grp h2{{font-size:12px;font-weight:400;color:var(--sub);padding-bottom:clamp(0px,.5svh,6px)}}
+.row{{display:flex;align-items:center;gap:14px;padding:clamp(8px,1.6svh,15px) 0;color:#fff;text-decoration:none;border-bottom:1px solid var(--line)}}
 .row .ic{{width:20px;height:20px;flex:none;color:var(--gold)}}
-.rl{{flex:none;font-size:15px}}
+.rl{{flex:none;font-size:clamp(14px,1.9svh,15px)}}
 .rv{{margin-inline-start:auto;unicode-bidi:isolate;font-size:14px;color:var(--sub);text-align:end;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}}
 @media (hover:hover){{.row:hover .rv{{color:#fff}}}}
-.tools{{margin-top:auto;padding-top:34px;display:flex;justify-content:center;gap:8px}}
+.tools{{padding-top:clamp(6px,1.6svh,22px);display:flex;justify-content:center;gap:8px}}
 .tool{{display:flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:99px;background:transparent;color:var(--sub);font:400 14px/1 var(--f);cursor:pointer;transition:color .2s,background .2s}}
 [dir=rtl] .tool{{font-family:var(--fa)}}
 .tool .ic{{width:18px;height:18px}}
 @media (hover:hover){{.tool:hover{{color:#fff;background:rgba(255,255,255,.06)}}}}
-.foot{{text-align:center;font-size:11.5px;color:rgba(255,255,255,.32);padding-top:14px}}
+.foot{{text-align:center;font-size:11px;color:rgba(255,255,255,.32);padding-top:clamp(2px,.8svh,10px)}}
+@media (max-height:620px){{.foot{{display:none}}.grp h2{{display:none}}.grp+.grp{{margin-top:0}}}}
+/* landscape phones: too short for one screen, fall back to scrolling */
+@media (max-height:480px){{.card{{height:auto;min-height:100svh}}.hero{{flex:none;height:260px}}.foot{{display:block}}}}
 a:focus-visible,button:focus-visible{{outline:2px solid var(--gold);outline-offset:3px}}
 .qr{{position:fixed;inset:0;z-index:10;background:rgba(4,15,23,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:grid;place-items:center;padding:24px;opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s}}
 .qr.on{{opacity:1;visibility:visible;transition:opacity .2s}}
