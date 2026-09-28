@@ -107,10 +107,10 @@ def page(a, c, url, qr_svg):
     meta_html = f'<p class="meta">{"".join(meta)}</p>' if meta else ""
 
     actions = []
-    if a.get("phone"): actions.append(f'<a class="act" href="tel:{E(a["phone"])}">{icon("phone")}<span data-en="Call" data-ar="اتصال">Call</span></a>')
-    if a.get("email"): actions.append(f'<a class="act" href="mailto:{E(a["email"])}">{icon("mail")}<span data-en="Email" data-ar="بريد">Email</span></a>')
+    if a.get("phone"): actions.append(f'<a class="btn" href="tel:{E(a["phone"])}">{icon("phone")}<span data-en="Call" data-ar="اتصال">Call</span></a>')
+    if a.get("email"): actions.append(f'<a class="btn" href="mailto:{E(a["email"])}">{icon("mail")}<span data-en="Email" data-ar="بريد">Email</span></a>')
 
-    wa_btn = (f'<a class="wa" href="https://wa.me/{wa}?text={wa_msg}" target="_blank" rel="noopener">{icon("whatsapp")}<span data-en="Message on WhatsApp" data-ar="راسلني على واتساب">Message on WhatsApp</span></a>' if wa else "")
+    wa_btn = (f'<a class="btn wa" href="https://wa.me/{wa}?text={wa_msg}" target="_blank" rel="noopener">{icon("whatsapp")}<span data-en="Message on WhatsApp" data-ar="راسلني على واتساب">Message on WhatsApp</span></a>' if wa else "")
     soc = []
     for k, v in (a.get("socials") or {}).items():
         v = clean_handle(v)
@@ -133,6 +133,8 @@ def page(a, c, url, qr_svg):
                  if comp else "")
 
     desc = f"{a['name']} · {a.get('title','')} at {c['name']}"
+    photo_hero = (f'<img class="hp" src="{E(a["photo"])}" alt="{E(a["name"])}">' if a.get("photo")
+                  else f'<span class="hm" aria-hidden="true">{E(initials)}</span>')
     return f'''<!doctype html>
 <html lang="en" dir="ltr">
 <head>
@@ -140,108 +142,91 @@ def page(a, c, url, qr_svg):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{E(a["name"])} · {E(c["name"])}</title>
 <meta name="description" content="{E(desc)}">
-<meta name="theme-color" content="#0A1F3C">
+<meta name="theme-color" content="#071A26">
 <meta property="og:title" content="{E(a["name"])}">
 <meta property="og:description" content="{E(a.get("title",""))} · {E(c["name"])}">
 <meta property="og:url" content="{E(url)}">
+{f'<meta property="og:image" content="{E(url + a["photo"])}">' if a.get("photo") else ""}
 <link rel="icon" href="../../favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&family=IBM+Plex+Sans+Arabic:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{{--deep:#061428;--navy:#0A1F3C;--navy2:#12305A;--teal:#1FB6A6;--gold:#C9A77C;--gold-d:#9A7A4E;--mist:#8CA0B3;--paper:#F4F6F9;--ink:#0A1F3C;--line:#DCE3EB;--sub:#5C6B7A;
+:root{{--bg:#071A26;--bg2:#0C2533;--line:rgba(255,255,255,.12);--txt:#fff;--sub:rgba(255,255,255,.58);--gold:#C9A77C;--wa:#25D366;
  --f:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;--fa:'IBM Plex Sans Arabic','Geeza Pro','Segoe UI',Tahoma,sans-serif}}
 *{{box-sizing:border-box;margin:0}}
-html{{background:var(--deep);-webkit-text-size-adjust:100%}}
-body{{min-height:100svh;font-family:var(--f);color:#fff;background:var(--deep);
- background-image:repeating-linear-gradient(72deg,transparent 0 46px,rgba(201,167,124,.045) 46px 50px,transparent 50px 120px);
- display:flex;justify-content:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}}
+html{{background:#040F17;-webkit-text-size-adjust:100%}}
+body{{min-height:100svh;font-family:var(--f);color:var(--txt);background:#040F17;display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0)}}
 [dir=rtl] body,[dir=rtl] button{{font-family:var(--fa)}}
-.card{{width:100%;max-width:460px;min-height:100svh;display:flex;flex-direction:column;background:var(--navy);position:relative;overflow:hidden}}
-@media (min-width:560px){{body{{padding:40px 0}}.card{{min-height:0;border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,.45)}}}}
-/* hero: the logo's slanted bars become the card face */
-.face{{position:relative;padding:22px 24px 26px;isolation:isolate}}
-.bars{{position:absolute;inset:0 -40px auto auto;height:330px;width:260px;z-index:-1;-webkit-mask-image:linear-gradient(#000 40%,transparent);mask-image:linear-gradient(#000 40%,transparent)}}
-[dir=rtl] .bars{{inset:0 auto auto -40px;transform:scaleX(-1)}}
-.top{{display:flex;justify-content:space-between;align-items:center}}
-.logo{{width:124px;aspect-ratio:640/171;background:#fff;-webkit-mask:url(data:image/png;base64,{LOGO}) left center/contain no-repeat;mask:url(data:image/png;base64,{LOGO}) left center/contain no-repeat}}
+.card{{width:100%;max-width:440px;min-height:100svh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}}
+@media (min-width:560px){{body{{padding:48px 0}}.card{{min-height:0;border-radius:32px;box-shadow:0 40px 100px rgba(0,0,0,.55)}}}}
+.hero{{position:relative;aspect-ratio:1/1.08;background:#0B3042;overflow:hidden}}
+.hp{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0}}
+.hm{{position:absolute;inset:0;display:grid;place-items:center;font:300 88px/1 var(--f);color:var(--gold)}}
+.hero::after{{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,26,38,.55) 0,rgba(7,26,38,0) 22%,rgba(7,26,38,0) 55%,var(--bg) 100%)}}
+.top{{position:absolute;z-index:2;inset:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:calc(20px + env(safe-area-inset-top,0px)) 22px 0}}
+.logo{{width:112px;aspect-ratio:640/171;background:#fff;-webkit-mask:url(data:image/png;base64,{LOGO}) left center/contain no-repeat;mask:url(data:image/png;base64,{LOGO}) left center/contain no-repeat}}
 [dir=rtl] .logo{{-webkit-mask-position:right center;mask-position:right center}}
-.lang{{font:500 13px/1 var(--fa);color:var(--gold);background:none;border:1px solid rgba(201,167,124,.45);border-radius:99px;padding:8px 13px;cursor:pointer}}
+.lang{{font:400 13px/1 var(--fa);color:#fff;background:rgba(7,26,38,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:8px 14px;cursor:pointer}}
 [dir=rtl] .lang{{font-family:var(--f)}}
-.who{{margin-top:44px}}
-.ph{{width:104px;height:104px;border-radius:30px;overflow:hidden;background:var(--navy2);border:1.5px solid var(--gold);display:grid;place-items:center;transform:rotate(-4deg)}}
-.ph img{{width:100%;height:100%;object-fit:cover;transform:rotate(4deg) scale(1.08)}}
-.mono{{font:500 38px/1 var(--f);color:var(--gold);transform:rotate(4deg);letter-spacing:.02em}}
-h1{{margin-top:22px;font-weight:600;font-size:clamp(30px,8.4vw,38px);line-height:1.05;letter-spacing:-.02em}}
+.body{{position:relative;z-index:2;margin-top:-72px;padding:0 24px 28px;flex:1;display:flex;flex-direction:column}}
+h1{{font-weight:400;font-size:clamp(32px,9vw,40px);line-height:1.04;letter-spacing:-.025em}}
 [dir=rtl] h1{{letter-spacing:0;line-height:1.3}}
-.ttl{{margin-top:8px;font-size:16px;color:var(--gold)}}
-.meta{{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;color:var(--mist)}}
-.wa{{margin-top:28px;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:17px;border-radius:16px;background:#25D366;color:#062A17;font:600 17px/1 inherit;font-family:inherit;text-decoration:none;transition:transform .15s,background .15s}}
-.wa:active{{transform:scale(.98)}}@media (hover:hover){{.wa:hover{{background:#3BE078}}}}
-.wa .ic{{width:22px;height:22px}}
-.wa+.save{{margin-top:10px}}
-.save{{margin-top:28px;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:17px;border-radius:16px;background:var(--gold);color:var(--navy);
- font:600 17px/1 inherit;font-family:inherit;text-decoration:none;transition:transform .15s,background .15s}}
-.save:active{{transform:scale(.98)}}@media (hover:hover){{.save:hover{{background:#D6B78E}}}}
-.save .ic{{width:22px;height:22px}}
-.acts{{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px}}
-.act{{display:flex;flex-direction:column;align-items:center;gap:8px;padding:15px 6px 13px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);
- color:#fff;text-decoration:none;font-size:14px;transition:background .15s}}
-.act .ic{{width:24px;height:24px;color:var(--teal)}}
-@media (hover:hover){{.act:hover{{background:rgba(255,255,255,.11)}}}}
-/* lower sheet */
-.sheet{{flex:1;background:var(--paper);color:var(--ink);border-radius:26px 26px 0 0;padding:26px 20px 18px;display:flex;flex-direction:column;gap:22px}}
-@media (min-width:560px){{.sheet{{border-radius:26px}}}}
-.grp h2{{font-size:14px;font-weight:500;color:var(--sub);padding:0 6px 8px}}
-.grp{{display:flex;flex-direction:column}}
-.row{{display:flex;align-items:center;gap:14px;padding:14px 12px;background:#fff;color:var(--ink);text-decoration:none;border:1px solid var(--line);border-bottom-width:0}}
-.row:first-of-type{{border-radius:14px 14px 0 0}}.row:last-child{{border-radius:0 0 14px 14px;border-bottom-width:1px}}
-.row:first-of-type:last-child{{border-radius:14px}}
-.row .ic{{width:22px;height:22px;flex:none;color:var(--gold-d)}}
-.rl{{flex:none;font-weight:500;font-size:15px}}
+.ttl{{margin-top:10px;font-size:15px;font-weight:300;color:var(--gold);letter-spacing:.01em}}
+.meta{{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--sub)}}
+.cta{{margin-top:30px;display:grid;gap:10px}}
+.btn{{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;border-radius:99px;font:500 16px/1 inherit;font-family:inherit;text-decoration:none;color:#fff;border:1px solid var(--line);background:transparent;transition:background .2s,transform .15s}}
+.btn:active{{transform:scale(.985)}}
+.btn .ic{{width:20px;height:20px}}
+.btn.wa{{background:#fff;color:var(--bg);border-color:#fff}}
+.btn.wa .ic{{color:#1DAA53;width:22px;height:22px}}
+@media (hover:hover){{.btn:hover{{background:rgba(255,255,255,.06)}}.btn.wa:hover{{background:#EEF2F4}}}}
+.pair{{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px}}
+.grp{{margin-top:34px}}
+.grp h2{{font-size:13px;font-weight:400;color:var(--sub);padding-bottom:6px}}
+.row{{display:flex;align-items:center;gap:14px;padding:16px 0;color:#fff;text-decoration:none;border-bottom:1px solid var(--line)}}
+.row .ic{{width:20px;height:20px;flex:none;color:var(--gold)}}
+.rl{{flex:none;font-size:15px}}
 .rv{{margin-inline-start:auto;unicode-bidi:isolate;font-size:14px;color:var(--sub);text-align:end;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}}
-@media (hover:hover){{.row:hover{{background:#FAFBFC}}}}
-.tools{{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
-.tool{{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--ink);font:500 15px/1 var(--f);cursor:pointer}}
+@media (hover:hover){{.row:hover .rv{{color:#fff}}}}
+.tools{{margin-top:auto;padding-top:34px;display:flex;justify-content:center;gap:8px}}
+.tool{{display:flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:99px;background:transparent;color:var(--sub);font:400 14px/1 var(--f);cursor:pointer;transition:color .2s,background .2s}}
 [dir=rtl] .tool{{font-family:var(--fa)}}
-.tool .ic{{width:20px;height:20px}}
-.foot{{text-align:center;font-size:12px;color:var(--sub);padding-top:2px}}
-a:focus-visible,button:focus-visible{{outline:2px solid var(--teal);outline-offset:3px}}
-/* QR sheet */
-.qr{{position:fixed;inset:0;z-index:10;background:rgba(6,20,40,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px;opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s}}
+.tool .ic{{width:18px;height:18px}}
+@media (hover:hover){{.tool:hover{{color:#fff;background:rgba(255,255,255,.06)}}}}
+.foot{{text-align:center;font-size:11.5px;color:rgba(255,255,255,.32);padding-top:14px}}
+a:focus-visible,button:focus-visible{{outline:2px solid var(--gold);outline-offset:3px}}
+.qr{{position:fixed;inset:0;z-index:10;background:rgba(4,15,23,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:grid;place-items:center;padding:24px;opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s}}
 .qr.on{{opacity:1;visibility:visible;transition:opacity .2s}}
-.qrbox{{position:relative;background:#fff;color:var(--ink);border-radius:24px;padding:52px 26px 22px;width:min(340px,100%);text-align:center;transform:translateY(12px);transition:transform .25s}}
+.qrbox{{position:relative;background:#fff;color:var(--bg);border-radius:28px;padding:52px 28px 24px;width:min(330px,100%);text-align:center;transform:translateY(12px);transition:transform .25s}}
 .qr.on .qrbox{{transform:none}}
 .qrbox svg.code{{width:100%;height:auto;display:block}}
-.qrbox b{{display:block;margin-top:14px;font-size:18px;font-weight:600}}
-.qrbox small{{display:block;margin-top:4px;color:var(--sub);font-size:13px}}
-.x{{position:absolute;top:10px;inset-inline-end:10px;width:36px;height:36px;border-radius:50%;border:0;background:var(--paper);color:var(--ink);display:grid;place-items:center;cursor:pointer}}
+.qrbox b{{display:block;margin-top:16px;font-size:18px;font-weight:500}}
+.qrbox small{{display:block;margin-top:4px;color:#5C6B7A;font-size:13px}}
+.x{{position:absolute;top:12px;inset-inline-end:12px;width:36px;height:36px;border-radius:50%;border:0;background:#F1F4F6;color:var(--bg);display:grid;place-items:center;cursor:pointer}}
 .x .ic{{width:18px;height:18px}}
-.toast{{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:99px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:11}}
+.toast{{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:#fff;color:var(--bg);padding:11px 18px;border-radius:99px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:11}}
 .toast.on{{opacity:1;transform:translate(-50%,0)}}
 @media (prefers-reduced-motion:reduce){{*{{transition:none!important}}}}
 </style>
 </head>
 <body>
 <main class="card">
- <div class="face">
-  <svg class="bars" viewBox="0 0 260 330" aria-hidden="true"><g fill="none" stroke="#C9A77C" stroke-opacity=".16" stroke-width="18" stroke-linecap="square">
-   <path d="M70 330 150 -10"/><path d="M122 330 202 -10"/><path d="M174 330 254 -10"/><path d="M226 330 306 -10"/></g></svg>
+ <div class="hero">{photo_hero}
   <div class="top"><span class="logo" role="img" aria-label="{E(c["name"])}"></span><button class="lang" id="lang" type="button" lang="ar">عربي</button></div>
-  <div class="who">
-   <div class="ph">{photo}</div>
-   <h1 data-en="{E(a["name"])}" data-ar="{E(a.get("name_ar") or a["name"])}">{E(a["name"])}</h1>
-   <p class="ttl" data-en="{E(a.get("title",""))}" data-ar="{E(a.get("title_ar") or a.get("title",""))}">{E(a.get("title",""))}</p>
-   {meta_html}
-  </div>
-  {wa_btn}
-  <a class="save" href="contact.vcf">{icon("save")}<span data-en="Save contact" data-ar="حفظ جهة الاتصال">Save contact</span></a>
-  <nav class="acts">{"".join(actions)}</nav>
  </div>
- <div class="sheet">
+ <div class="body">
+  <h1 data-en="{E(a["name"])}" data-ar="{E(a.get("name_ar") or a["name"])}">{E(a["name"])}</h1>
+  <p class="ttl" data-en="{E(a.get("title",""))}" data-ar="{E(a.get("title_ar") or a.get("title",""))}">{E(a.get("title",""))}</p>
+  {meta_html}
+  <div class="cta">
+   {wa_btn}
+   <a class="btn" href="contact.vcf">{icon("save")}<span data-en="Save contact" data-ar="حفظ جهة الاتصال">Save contact</span></a>
+   <div class="pair">{"".join(actions)}</div>
+  </div>
   {soc_html}
   {comp_html}
   <div class="tools">
-   <button class="tool" type="button" id="qrb">{icon("qr")}<span data-en="Show QR code" data-ar="رمز QR">Show QR code</span></button>
+   <button class="tool" type="button" id="qrb">{icon("qr")}<span data-en="QR code" data-ar="رمز QR">QR code</span></button>
    <button class="tool" type="button" id="shb">{icon("share")}<span data-en="Share card" data-ar="مشاركة البطاقة">Share card</span></button>
   </div>
   <p class="foot" data-en="© {E(c["name"])}" data-ar="© {E(c.get("name_ar") or c["name"])}">© {E(c["name"])}</p>
@@ -282,6 +267,7 @@ a:focus-visible,button:focus-visible{{outline:2px solid var(--teal);outline-offs
 </body>
 </html>
 '''
+
 
 def qr_svg(url):
     q = segno.make(url, error="m")
