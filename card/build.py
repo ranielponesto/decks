@@ -108,9 +108,9 @@ def page(a, c, url, qr_svg):
 
     actions = []
     if a.get("phone"): actions.append(f'<a class="act" href="tel:{E(a["phone"])}">{icon("phone")}<span data-en="Call" data-ar="اتصال">Call</span></a>')
-    if wa: actions.append(f'<a class="act" href="https://wa.me/{wa}?text={wa_msg}" target="_blank" rel="noopener">{icon("whatsapp")}<span data-en="WhatsApp" data-ar="واتساب">WhatsApp</span></a>')
     if a.get("email"): actions.append(f'<a class="act" href="mailto:{E(a["email"])}">{icon("mail")}<span data-en="Email" data-ar="بريد">Email</span></a>')
 
+    wa_btn = (f'<a class="wa" href="https://wa.me/{wa}?text={wa_msg}" target="_blank" rel="noopener">{icon("whatsapp")}<span data-en="Message on WhatsApp" data-ar="راسلني على واتساب">Message on WhatsApp</span></a>' if wa else "")
     soc = []
     for k, v in (a.get("socials") or {}).items():
         v = clean_handle(v)
@@ -175,6 +175,10 @@ h1{{margin-top:22px;font-weight:600;font-size:clamp(30px,8.4vw,38px);line-height
 [dir=rtl] h1{{letter-spacing:0;line-height:1.3}}
 .ttl{{margin-top:8px;font-size:16px;color:var(--gold)}}
 .meta{{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;color:var(--mist)}}
+.wa{{margin-top:28px;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:17px;border-radius:16px;background:#25D366;color:#062A17;font:600 17px/1 inherit;font-family:inherit;text-decoration:none;transition:transform .15s,background .15s}}
+.wa:active{{transform:scale(.98)}}@media (hover:hover){{.wa:hover{{background:#3BE078}}}}
+.wa .ic{{width:22px;height:22px}}
+.wa+.save{{margin-top:10px}}
 .save{{margin-top:28px;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:17px;border-radius:16px;background:var(--gold);color:var(--navy);
  font:600 17px/1 inherit;font-family:inherit;text-decoration:none;transition:transform .15s,background .15s}}
 .save:active{{transform:scale(.98)}}@media (hover:hover){{.save:hover{{background:#D6B78E}}}}
@@ -229,6 +233,7 @@ a:focus-visible,button:focus-visible{{outline:2px solid var(--teal);outline-offs
    <p class="ttl" data-en="{E(a.get("title",""))}" data-ar="{E(a.get("title_ar") or a.get("title",""))}">{E(a.get("title",""))}</p>
    {meta_html}
   </div>
+  {wa_btn}
   <a class="save" href="contact.vcf">{icon("save")}<span data-en="Save contact" data-ar="حفظ جهة الاتصال">Save contact</span></a>
   <nav class="acts">{"".join(actions)}</nav>
  </div>

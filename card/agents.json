@@ -12,22 +12,20 @@
   },
   "agents": [
     {
-      "slug": "sample",
-      "name": "Sample Agent",
-      "name_ar": "اسم الوكيل",
-      "title": "Senior Property Consultant",
-      "title_ar": "مستشار عقاري أول",
-      "phone": "+97450000000",
+      "slug": "adil",
+      "name": "Adil Alaatchane",
+      "name_ar": "",
+      "title": "Real Estate Professional",
+      "title_ar": "خبير عقاري",
+      "phone": "+97470003574",
       "whatsapp": "",
-      "email": "agent@example.com",
+      "email": "adil@capstoneproperty.com",
       "photo": "",
       "license": "",
-      "languages": ["English", "Arabic"],
-      "languages_ar": ["الإنجليزية", "العربية"],
+      "languages": [],
+      "languages_ar": [],
       "socials": {
-        "instagram": "capstone.sample",
-        "tiktok": "capstone.sample",
-        "linkedin": "https://www.linkedin.com/in/sample"
+        "instagram": "adil.capstone"
       }
     }
   ]
