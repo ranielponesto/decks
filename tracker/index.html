@@ -108,6 +108,24 @@ td.c-furn:empty::after{content:"\2014";color:var(--muted)}
 .furn.SF{background:var(--soft);border-color:var(--accent);color:var(--accent)}
 .lst{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
 .lst .st{font-size:11.5px}
+.ms{position:relative}
+.ms-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;font-size:13px;cursor:pointer;min-width:170px;max-width:260px;color:var(--ink)}
+.ms-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-btn svg{color:var(--muted);flex:none}
+.ms-btn.on{border-color:var(--accent);color:var(--accent);font-weight:500}
+.ms-pop{position:absolute;z-index:20;top:calc(100% + 6px);left:0;width:min(320px,calc(100vw - 28px));background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px}
+.ms-pop[hidden]{display:none}
+.ms-pop input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;font-size:14px}
+.ms-pop input:focus{outline:none;border-color:var(--accent)}
+.ms-list{max-height:320px;overflow-y:auto;margin:8px -4px 0;padding:0 4px}
+.ms-h{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 6px 4px}
+.ms-opt{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:8px;cursor:pointer;font-size:14px}
+.ms-opt:hover{background:var(--soft)}
+.ms-opt input{width:16px;height:16px;accent-color:var(--accent);margin:0;flex:none}
+.ms-opt span{flex:1;min-width:0}
+.ms-opt small{color:var(--muted);font-variant-numeric:tabular-nums}
+.ms-opt.zero{opacity:.5}
+.ms-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
 .ftoggle{display:none}
 .fcount{background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11px;font-weight:600;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
 .fcount[hidden]{display:none}
@@ -149,6 +167,11 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   .sortby select{max-width:170px}
   .filters > :not(.keep):not(.ftoggle){order:4}
   .filters > .group select{flex:1 1 0;min-width:0;max-width:none}
+  .filters > .group .ms{flex:1 1 0;min-width:0;position:static}
+  .ms-btn{width:100%;max-width:none;min-width:0}
+  .ms-pop{left:14px;right:14px;width:auto}
+  .filters > .group:has(.ms){flex-wrap:wrap;overflow:visible}
+  .filters{position:relative}
   .filters.open .ftoggle{background:var(--soft);border-color:var(--accent)}
   /* cards */
   .tablebox{background:none;border:0;border-radius:0;overflow:visible;margin-top:12px}
@@ -247,6 +270,7 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="area" data-v="lusail" aria-pressed="false">Lusail</button>
         <button class="chip" data-f="area" data-v="doha" aria-pressed="false">Doha</button>
       </div>
+      <div class="group" role="group" aria-label="Property type" id="types"></div>
       <div class="group" role="group" aria-label="Bedrooms">
         <span>Beds</span>
         <button class="chip" data-f="bed" data-v="" aria-pressed="true">Any</button>
@@ -258,8 +282,14 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="bed" data-v="5" aria-pressed="false">5+</button>
       </div>
       <div class="group">
-        <select id="loc" aria-label="Location"><option value="">All locations</option></select>
-        <select id="ptype" aria-label="Property type" hidden><option value="">All property types</option></select>
+        <div class="ms" id="locms">
+          <button type="button" class="ms-btn" id="locbtn" aria-haspopup="true" aria-expanded="false"><span id="loclbl">All locations</span><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+          <div class="ms-pop" id="locpop" hidden>
+            <input id="locq" type="search" placeholder="Find a location" autocomplete="off" aria-label="Find a location">
+            <div class="ms-list" id="loclist" role="group" aria-label="Locations"></div>
+            <div class="ms-foot"><button type="button" class="reset" id="locclear">Clear</button><button type="button" class="btn" id="locdone">Done</button></div>
+          </div>
+        </div>
         <select id="use" aria-label="Property use">
           <option value="">Residential &amp; commercial</option>
           <option value="res">Residential</option>
@@ -341,7 +371,27 @@ const AREAS={
 function areaOf(loc){ if(!loc) return ""; const l=loc.toLowerCase();
   if(AREAS.pearl.re.test(l)) return "pearl"; if(AREAS.lusail.re.test(l)) return "lusail";
   if(AREAS.doha.list.includes(l)) return "doha"; return ""; }
-function ptypeOf(v){ v=String(v||"").trim(); if(!v) return ""; return v.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()); }
+function ptypeOf(v){ v=String(v||"").trim(); if(!v) return ""; v=v.toLowerCase();
+  const map=[[/apart|flat/,"Apartment"],[/pent/,"Penthouse"],[/town/,"Townhouse"],[/villa/,"Villa"],[/duplex/,"Duplex"],[/office/,"Office"],[/show ?room/,"Showroom"],[/shop|retail/,"Retail"],[/ware|store/,"Warehouse"],[/land|plot/,"Land"],[/hotel/,"Hotel apartment"]];
+  for(const [re,l] of map) if(re.test(v)) return l; return v.replace(/\b\w/g,c=>c.toUpperCase()); }
+/* Until the export carries a property type field, estimate it from the record type and names */
+function guessType(o){
+  const s=[o.project,o.unit,o.sub,o.comm].join(" ").toLowerCase();
+  if(o.use==="com"){
+    if(/show ?room/.test(s)) return "Showroom";
+    if(/\bshop|retail|souq|mall|plaza/.test(s)) return "Retail";
+    if(/warehouse|\bstore\b|logistic/.test(s)) return "Warehouse";
+    if(/\bland\b|\bplot\b/.test(s)) return "Land";
+    return "Office";
+  }
+  if(/penthouse/.test(s)) return "Penthouse";
+  if(/town ?house/.test(s)) return "Townhouse";
+  if(/\bland\b|\bplot\b/.test(s)) return "Land";
+  if(/villa apartment/.test(s)) return "Apartment";
+  if(/villa|compound|huzoom|garden villa|ain gardens|\bvillage\b/.test(s)) return "Villa";
+  return "Apartment";
+}
+const TYPE_ORDER=["Apartment","Villa","Townhouse","Penthouse","Duplex","Hotel apartment","Office","Retail","Showroom","Warehouse","Land"];
 function parseTable(asOf,header,rows){
   const ix={};for(const k in COLS){ix[k]=header.findIndex(h=>h&&COLS[k].test(String(h).trim()))}
   if(ix.ref<0) throw new Error("This file has no \u201cListings Ref No.\u201d column. Export the All Listings report from Salesforce and try again.");
@@ -365,7 +415,7 @@ function parseTable(asOf,header,rows){
   }
   // fill missing community from the project's other listings
   for(const o of out){ if(!o.comm&&commByProj[o.project]){const c=commByProj[o.project];o.comm=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];o.commInferred=true} }
-  for(const o of out){ o.loc=o.comm||o.sub||""; o.area=areaOf(o.comm)||areaOf(o.sub); o.hay=[o.ref,o.project,o.unit,o.comm,o.sub,o.agent,o.ptype].join(" \u0001 ").toLowerCase(); }
+  for(const o of out){ if(!o.ptype){o.ptype=guessType(o);o.ptypeGuess=true} o.loc=o.comm||o.sub||""; o.area=areaOf(o.comm)||areaOf(o.sub); o.hay=[o.ref,o.project,o.unit,o.comm,o.sub,o.agent,o.ptype].join(" \u0001 ").toLowerCase(); }
   return {asOf:String(asOf||"").replace(/\s*\u2022.*$/,"").replace(/Arabia Standard Time\/AST/,"AST"),list:out};
 }
 function fromSheetArrays(aoa){
@@ -381,26 +431,49 @@ function fromSheetArrays(aoa){
 
 /* ---------- state ---------- */
 let DB,LOCS=[];
-const S={q:"",status:"Available",deal:"",bed:"",area:"",loc:"",ptype:"",use:"",web:"",sort:"refN",dir:-1,limit:100,open:null};
+const S={q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],use:"",web:"",sort:"refN",dir:-1,limit:100,open:null};
 function load(data,source){
   DB=data;
   fillLocs();
-  const pt={};for(const o of DB.list){if(o.ptype)pt[o.ptype]=(pt[o.ptype]||0)+1}
-  const PT=Object.keys(pt).sort((a,b)=>pt[b]-pt[a]);
-  const ps=$("#ptype"); ps.hidden=!PT.length;
-  ps.innerHTML='<option value="">All property types</option>'+PT.map(x=>`<option>${esc(x)}</option>`).join("");
-  ps.value=PT.includes(S.ptype)?S.ptype:""; S.ptype=ps.value;
+  fillTypes();
   $("#asof").textContent=(DB.asOf?"Salesforce export, "+DB.asOf.replace(/^as of\s*/i,"as of "):"Salesforce export")+(source==="upload"?" (loaded on this device)":"");
   render();
 }
 
 function fillLocs(){
   if(!DB) return;
-  const cnt={};for(const o of DB.list){if(o.loc&&(!S.area||o.area===S.area))cnt[o.loc]=(cnt[o.loc]||0)+1}
-  LOCS=Object.keys(cnt).sort((a,b)=>a.localeCompare(b));
-  const sel=$("#loc");
-  sel.innerHTML=`<option value="">${S.area?"All of "+AREAS[S.area].label:"All locations"}</option>`+LOCS.map(l=>`<option>${esc(l)}</option>`).join("");
-  sel.value=LOCS.includes(S.loc)?S.loc:""; S.loc=sel.value;
+  const all=new Set(DB.list.filter(o=>o.loc&&(!S.area||o.area===S.area)).map(o=>o.loc));
+  LOCS=[...all].sort((a,b)=>a.localeCompare(b));
+  S.locs=S.locs.filter(l=>all.has(l));
+  locLabel();
+}
+function locLabel(){
+  const n=S.locs.length, b=$("#locbtn");
+  $("#loclbl").textContent=n===0?(S.area?"All of "+AREAS[S.area].label:"All locations"):n===1?S.locs[0]:n+" locations";
+  b.classList.toggle("on",n>0); b.title=S.locs.join(", ");
+}
+function drawLocList(){
+  const q=$("#locq").value.trim().toLowerCase();
+  const cnt={}; for(const o of DB.list) if(o.loc&&pass(o,{skipLoc:true})) cnt[o.loc]=(cnt[o.loc]||0)+1;
+  const groups=S.area?[[S.area,LOCS]]:[["pearl",[]],["lusail",[]],["doha",[]],["",[]]];
+  if(!S.area){ const ix={pearl:0,lusail:1,doha:2,"":3}; const aOf={}; for(const o of DB.list) if(o.loc) aOf[o.loc]=o.area; for(const l of LOCS) groups[ix[aOf[l]||""]][1].push(l); }
+  let h="";
+  for(const [a,ls] of groups){
+    const vis=ls.filter(l=>!q||l.toLowerCase().includes(q)); if(!vis.length) continue;
+    // selected first, then by listings
+    vis.sort((x,y)=>(S.locs.includes(y)-S.locs.includes(x))||((cnt[y]||0)-(cnt[x]||0))||x.localeCompare(y));
+    if(!S.area) h+=`<div class="ms-h">${a?AREAS[a].label:"Other areas"}</div>`;
+    h+=vis.map(l=>`<label class="ms-opt${cnt[l]?"":" zero"}"><input type="checkbox" value="${esc(l)}"${S.locs.includes(l)?" checked":""}><span>${esc(l)}</span><small>${fmt(cnt[l]||0)}</small></label>`).join("");
+  }
+  $("#loclist").innerHTML=h||'<div class="sub" style="padding:10px 6px">No location matches</div>';
+}
+function fillTypes(){
+  if(!DB) return;
+  const cnt={}; for(const o of DB.list) if(o.ptype&&/^avail/i.test(o.status)) cnt[o.ptype]=(cnt[o.ptype]||0)+1;
+  const T=Object.keys(cnt).sort((a,b)=>{const i=TYPE_ORDER.indexOf(a),j=TYPE_ORDER.indexOf(b);return (i<0?99:i)-(j<0?99:j)||cnt[b]-cnt[a]});
+  S.types=S.types.filter(x=>T.includes(x));
+  $("#types").hidden=!T.length;
+  $("#types").innerHTML='<span>Type</span><button class="chip" data-type="" aria-pressed="'+(!S.types.length)+'">All</button>'+T.map(x=>`<button class="chip" data-type="${esc(x)}" aria-pressed="${S.types.includes(x)}">${esc(x)}</button>`).join("");
 }
 /* ---------- helpers ---------- */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -421,20 +494,24 @@ const WEBICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" strok
 function stClass(s){ s=s.toLowerCase(); return s.startsWith("avail")?"available":s.startsWith("book")?"booked":s.startsWith("upcom")?"upcoming":s.startsWith("pend")?"pending":""; }
 
 /* ---------- filtering ---------- */
+function pass(o,opt={}){
+  if(!opt.refMode&&S.status&&o.status!==S.status) return false;
+  if(S.deal&&o.deal!==S.deal) return false;
+  if(S.use&&o.use!==S.use) return false;
+  if(S.web&&!webURL(o)) return false;
+  if(S.area&&o.area!==S.area) return false;
+  if(!opt.skipLoc&&S.locs.length&&!S.locs.includes(o.loc)) return false;
+  if(S.types.length&&!S.types.includes(o.ptype)) return false;
+  if(S.bed!==""){const b=+S.bed; if(o.beds==null) return false; if(b===5?o.beds<5:o.beds!==b) return false;}
+  return true;
+}
 function filter(){
   const q=S.q.trim().toLowerCase();
   let terms=q?q.split(/\s+/).filter(Boolean):[];
   let refMode=false,refQ="";
   if(q&&isRef(q)){refMode=true;refQ=normRef(q)}
   let res=DB.list.filter(o=>{
-    if(!refMode&&S.status&&o.status!==S.status) return false;
-    if(S.deal&&o.deal!==S.deal) return false;
-    if(S.use&&o.use!==S.use) return false;
-    if(S.web&&!webURL(o)) return false;
-    if(S.area&&o.area!==S.area) return false;
-    if(S.loc&&o.loc!==S.loc) return false;
-    if(S.ptype&&o.ptype!==S.ptype) return false;
-    if(S.bed!==""){const b=+S.bed; if(o.beds==null) return false; if(b===5?o.beds<5:o.beds!==b) return false;}
+    if(!pass(o,{refMode})) return false;
     if(refMode) return o.ref.toLowerCase()===refQ||o.ref.toLowerCase().startsWith(refQ);
     for(const t of terms) if(!o.hay.includes(t)) return false;
     return true;
@@ -463,13 +540,13 @@ function render(){
     if(res.length&&off.length===res.length){note.hidden=false;note.textContent=`${off[0].ref} is marked “${off[0].status}”, so it isn’t in the available list. Showing it anyway.`}
     else note.hidden=true;
   } else note.hidden=true;
-  { const n=[S.status!=="Available",S.deal,S.bed!=="",S.loc,S.use,S.ptype,S.web].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
-  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.loc||S.use||S.web||S.area||S.ptype);
+  { const n=[S.status!=="Available",S.deal,S.bed!=="",S.locs.length,S.use,S.types.length,S.web].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
+  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.locs.length||S.use||S.web||S.area||S.types.length);
   { const v=S.sort+":"+S.dir, sel=$("#sort"); sel.value=[...sel.options].some(o=>o.value===v)?v:"custom"; }
   document.querySelectorAll("thead th.sort").forEach(th=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k; if(!refMode&&k===S.sort) th.dataset.dir=S.dir>0?"\u2191":"\u2193"; else delete th.dataset.dir;});
   const tb=$("#tb");
   if(!res.length){
-    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.loc||S.area)tips.push("location"); if(S.ptype)tips.push("property type"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
+    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.locs.length||S.area)tips.push("location"); if(S.types.length)tips.push("property type"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
     tb.innerHTML=`<tr><td colspan="5"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
     $("#more").hidden=true; syncHash(); return;
   }
@@ -497,7 +574,7 @@ function render(){
     const det=S.open===o.ref?`<tr class="detail"><td colspan="5"><dl class="dl">
       <div><dt>Project</dt><dd>${esc(o.project||"\u2014")}</dd></div>
       <div><dt>Unit</dt><dd>${esc(o.unit||"Not set in Salesforce")}</dd></div>
-      <div><dt>Property type</dt><dd>${esc(o.ptype||"Not in the export")}</dd></div>
+      <div><dt>Property type</dt><dd>${esc(o.ptype||"\u2014")}${o.ptypeGuess?' <span class="sub">(estimated from name)</span>':""}</dd></div>
       <div><dt>Furnishing</dt><dd>${o.furn?FURN[o.furn]:"Not in the export"}</dd></div>
       <div><dt>Status</dt><dd>${esc(o.status||"\u2014")}</dd></div>
       <div><dt>Record type</dt><dd>${esc(o.rtype||"\u2014")}</dd></div>
@@ -546,27 +623,37 @@ function similar(t){
 function syncHash(){
   const p=new URLSearchParams();
   if(S.q)p.set("q",S.q); if(S.status!=="Available")p.set("status",S.status||"all");
-  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.loc)p.set("loc",S.loc); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.area)p.set("area",S.area); if(S.ptype)p.set("type",S.ptype); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
+  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.locs.length)p.set("loc",S.locs.join("|")); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.area)p.set("area",S.area); if(S.types.length)p.set("type",S.types.join("|")); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
   const h=p.toString(); try{history.replaceState(null,"",h?"#"+h:location.pathname+location.search)}catch(e){}
 }
 function readHash(){
   const p=new URLSearchParams(location.hash.slice(1));
   S.q=p.get("q")||""; const st=p.get("status"); S.status=st==null?"Available":(st==="all"?"":st);
-  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.loc=p.get("loc")||""; S.use=p.get("use")||""; S.web=p.get("web")||""; S.area=AREAS[p.get("area")]?p.get("area"):""; S.ptype=p.get("type")||"";
+  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.locs=(p.get("loc")||"").split("|").filter(Boolean); S.use=p.get("use")||""; S.web=p.get("web")||""; S.area=AREAS[p.get("area")]?p.get("area"):""; S.types=(p.get("type")||"").split("|").filter(Boolean);
   const so=(p.get("sort")||"refN:-1").split(":"); S.sort=["refN","project","beds","price","loc","agent"].includes(so[0])?so[0]:"refN"; S.dir=so[1]==="1"?1:-1;
-  $("#q").value=S.q; $("#use").value=S.use; $("#loc").value=S.loc; syncChips();
+  $("#q").value=S.q; $("#use").value=S.use; if(DB){fillLocs();fillTypes();} syncChips();
 }
-function syncChips(){ document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",String((S[c.dataset.f]??"")===c.dataset.v))); }
+function syncChips(){ document.querySelectorAll(".chip[data-f]").forEach(c=>c.setAttribute("aria-pressed",String((S[c.dataset.f]??"")===c.dataset.v))); }
 
 /* ---------- events ---------- */
 let t; $("#q").addEventListener("input",e=>{clearTimeout(t);t=setTimeout(()=>{S.q=e.target.value;S.limit=100;S.open=null;render()},90)});
 $("#q").addEventListener("keydown",e=>{if(e.key==="Escape"){e.target.value="";S.q="";render()}});
-document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{S[c.dataset.f]=c.dataset.v;if(c.dataset.f==="area")fillLocs();S.limit=100;syncChips();render()});
-$("#loc").onchange=e=>{S.loc=e.target.value;S.limit=100;render()};
+document.querySelectorAll(".chip[data-f]").forEach(c=>c.onclick=()=>{S[c.dataset.f]=c.dataset.v;if(c.dataset.f==="area"){fillLocs();closeLoc();}S.limit=100;syncChips();render()});
+function closeLoc(){ $("#locpop").hidden=true; $("#locbtn").setAttribute("aria-expanded","false"); }
+$("#locbtn").onclick=e=>{ e.stopPropagation(); const pop=$("#locpop"); if(!pop.hidden) return closeLoc();
+  pop.hidden=false; $("#locbtn").setAttribute("aria-expanded","true"); $("#locq").value=""; drawLocList(); if(matchMedia("(hover:hover)").matches) $("#locq").focus(); };
+$("#locq").oninput=drawLocList;
+$("#loclist").addEventListener("change",e=>{ const v=e.target.value; if(!v) return;
+  S.locs=e.target.checked?[...S.locs,v]:S.locs.filter(x=>x!==v); S.limit=100; locLabel(); render(); });
+$("#locclear").onclick=()=>{ S.locs=[]; locLabel(); drawLocList(); render(); };
+$("#locdone").onclick=closeLoc;
+document.addEventListener("click",e=>{ if(!$("#locms").contains(e.target)) closeLoc(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("#locpop").hidden){ closeLoc(); $("#locbtn").focus(); } });
+$("#types").addEventListener("click",e=>{ const c=e.target.closest("[data-type]"); if(!c) return; const v=c.dataset.type;
+  S.types=v?(S.types.includes(v)?S.types.filter(x=>x!==v):[...S.types,v]):[]; S.limit=100; fillTypes(); render(); });
 $("#use").onchange=e=>{S.use=e.target.value;S.limit=100;render()};
-$("#ptype").onchange=e=>{S.ptype=e.target.value;S.limit=100;render()};
 $("#sort").onchange=e=>{if(e.target.value==="custom")return;const [k,d]=e.target.value.split(":");S.sort=k;S.dir=+d;S.limit=100;render()};
-$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",area:"",loc:"",ptype:"",use:"",web:"",limit:100,open:null});$("#q").value="";$("#use").value="";$("#ptype").value="";fillLocs();syncChips();render();$("#q").focus()};
+$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],use:"",web:"",limit:100,open:null});$("#q").value="";$("#use").value="";fillLocs();fillTypes();syncChips();render();$("#q").focus()};
 $("#ftoggle").onclick=()=>{const f=$("#filters"),o=f.classList.toggle("open");$("#ftoggle").setAttribute("aria-expanded",String(o))};
 if(matchMedia("(max-width:760px)").matches) $("#q").placeholder="Ref, project, unit or area";
 $("#more").onclick=()=>{S.limit+=100;render()};
