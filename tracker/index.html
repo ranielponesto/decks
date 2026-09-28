@@ -102,11 +102,15 @@ tbody tr.row.live:hover td{background:var(--soft)}
 .bed small{font-size:12px;font-weight:400;color:var(--muted);margin-left:3px}
 .loc1{font-weight:500}
 .projline{margin-top:3px}
+td.c-furn:empty::after{content:"\2014";color:var(--muted)}
 .furn{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
 .furn.FF{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .furn.SF{background:var(--soft);border-color:var(--accent);color:var(--accent)}
 .lst{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
 .lst .st{font-size:11.5px}
+.ftoggle{display:none}
+.fcount{background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11px;font-weight:600;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.fcount[hidden]{display:none}
 .sortby{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;color:var(--muted)}
 tr.sep td{background:var(--bg);padding:22px 14px 10px;border-bottom:1px solid var(--line)}
 tr.sep b{font-weight:600;margin-right:10px}
@@ -123,34 +127,60 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
 /* Mobile: rows become stacked cards */
 @media (max-width:760px){
   .wrap{padding:0 14px}
-  .panel{position:static}
-  header.top{padding:18px 0 10px}
+  .panel{position:static;padding:4px 0 12px}
+  header.top{padding:14px 0 10px;flex-wrap:nowrap;align-items:flex-start}
+  .brand{min-width:0}
   .brand h1{font-size:22px}
-  .search input{font-size:17px;padding:14px 118px 14px 44px;text-overflow:ellipsis}
+  .brand p{font-size:12px}
+  .tools .lbl{display:none}
+  .tools .btn{padding:8px 10px}
+  .search input{font-size:16px;padding:13px 104px 13px 42px;text-overflow:ellipsis}
   .search svg{left:14px}
   .search .count b{font-size:16px}
-  .filters{gap:8px 12px}
-  .tablebox{background:none;border:0;border-radius:0;overflow:visible}
+  /* filters: area presets + Filters/Sort always visible, the rest folds away */
+  .filters{gap:8px;margin-top:10px}
+  .filters:not(.open) > :not(.keep):not(.ftoggle){display:none!important}
+  .filters > .group{width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:1px}
+  .filters > .group::-webkit-scrollbar{display:none}
+  .filters > .group .chip,.filters > .group > span{flex:none}
+  .filters > .area{order:1}
+  .ftoggle{display:inline-flex;order:2}
+  .sortby{order:3;margin-left:auto}
+  .sortby select{max-width:170px}
+  .filters > :not(.keep):not(.ftoggle){order:4}
+  .filters > .group select{flex:1 1 0;min-width:0;max-width:none}
+  .filters.open .ftoggle{background:var(--soft);border-color:var(--accent)}
+  /* cards */
+  .tablebox{background:none;border:0;border-radius:0;overflow:visible;margin-top:12px}
   table{min-width:0}
   thead{display:none}
-  tbody tr.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+  tbody tr.row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:0 8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
   tbody tr.row:hover td,tbody tr.row.live td{background:none}
   tbody tr.row.live{box-shadow:inset 3px 0 0 var(--accent);background:var(--live)}
   tbody tr.row.live td:first-child{box-shadow:none}
-  .sortby{margin-left:0}
-  tbody td{padding:0;border:0}
-  td.c-bed{grid-column:1;grid-row:1}
-  td.c-rate{grid-column:2;grid-row:1;text-align:right}
-  td.c-loc{grid-column:1/-1;margin-top:4px}
-  td.c-furn{grid-column:1/-1;margin-top:8px}
-  td.c-furn:empty{display:none}
+  tbody td{padding:0;border:0;min-width:0}
+  td.c-bed{grid-column:1;grid-row:1;display:flex;align-items:baseline;gap:8px}
+  td.c-bed .ptype{margin:0}
+  td.c-furn{grid-column:2;grid-row:1}
+  td.c-furn:empty::after{content:none}
+  td.c-rate{grid-column:3;grid-row:1;text-align:right}
+  td.c-rate .price,td.c-rate .sub{display:inline}
+  td.c-rate .sub{margin-left:6px;font-size:12px}
+  td.c-rate .sub::before{content:"\00b7\00a0"}
+  td.c-loc{grid-column:1/-1;margin-top:8px}
+  td.c-loc .loc1,td.c-loc .projline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  td.c-loc .projline{margin-top:2px;font-size:14px}
   td.c-ref{grid-column:1/-1;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-  .lst{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .lst{flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px}
+  .lst .st{margin-left:6px}
+  .lst br{display:none}
+  .cta{padding:7px 12px}
   tr.sep{display:block}
   tr.sep td{display:block;padding:18px 2px 10px;border:0}
   tr.sep .sub{display:block;margin-top:2px}
   tr.detail{display:block;margin:-6px 0 8px}
   tr.detail td{display:block;border-radius:0 0 12px 12px}
+  .dl{grid-template-columns:1fr 1fr}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .gate{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
@@ -179,7 +209,7 @@ body.locked{overflow:hidden}
     <div class="tools">
       <label class="btn" title="Load a newer Salesforce export (.xlsx)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
-        Load new export
+        <span class="lbl">Load new export</span>
         <input id="file" type="file" accept=".xlsx,.xls,.csv" class="sr">
       </label>
       <button class="btn" id="lock" title="Lock this device" aria-label="Lock">
@@ -199,7 +229,8 @@ body.locked{overflow:hidden}
       <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Reference, project, unit or area" aria-label="Search listings">
       <div class="count" aria-live="polite"><b id="n">0</b> <span id="nl">listings</span></div>
     </div>
-    <div class="filters">
+    <div class="filters" id="filters">
+      <button class="btn ftoggle" id="ftoggle" aria-expanded="false" aria-controls="filters"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filters<span class="fcount" id="fcount" hidden></span></button>
       <div class="group" role="group" aria-label="Status">
         <button class="chip" data-f="status" data-v="Available" aria-pressed="true">Available</button>
         <button class="chip" data-f="status" data-v="" aria-pressed="false">All statuses</button>
@@ -209,7 +240,7 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="deal" data-v="rent" aria-pressed="false">Rent</button>
         <button class="chip" data-f="deal" data-v="sale" aria-pressed="false">Sale</button>
       </div>
-      <div class="group" role="group" aria-label="Area">
+      <div class="group keep area" role="group" aria-label="Area">
         <span>Area</span>
         <button class="chip" data-f="area" data-v="" aria-pressed="true">All</button>
         <button class="chip" data-f="area" data-v="pearl" aria-pressed="false">The Pearl</button>
@@ -240,7 +271,7 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="web" data-v="" aria-pressed="true">Any portal</button>
         <button class="chip" data-f="web" data-v="1" aria-pressed="false">Live on website</button>
       </div>
-      <label class="sortby">Sort by
+      <label class="sortby keep">Sort by
         <select id="sort" aria-label="Sort by">
           <option value="refN:-1">Newest first</option>
           <option value="project:1">Project, A to Z</option>
@@ -432,6 +463,7 @@ function render(){
     if(res.length&&off.length===res.length){note.hidden=false;note.textContent=`${off[0].ref} is marked “${off[0].status}”, so it isn’t in the available list. Showing it anyway.`}
     else note.hidden=true;
   } else note.hidden=true;
+  { const n=[S.status!=="Available",S.deal,S.bed!=="",S.loc,S.use,S.ptype,S.web].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
   $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.loc||S.use||S.web||S.area||S.ptype);
   { const v=S.sort+":"+S.dir, sel=$("#sort"); sel.value=[...sel.options].some(o=>o.value===v)?v:"custom"; }
   document.querySelectorAll("thead th.sort").forEach(th=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k; if(!refMode&&k===S.sort) th.dataset.dir=S.dir>0?"\u2191":"\u2193"; else delete th.dataset.dir;});
@@ -446,13 +478,16 @@ function render(){
     const unit=o.unit?`<div class="sub">Unit ${hl(o.unit,terms)}</div>`:"";
     const loc=o.loc?`${hl(o.comm||o.sub,terms)}${o.sub&&o.sub!==o.comm&&o.comm?`<div class="sub">${hl(o.sub,terms)}</div>`:""}`:'<span class="sub">\u2014</span>';
     const url=webURL(o), avail=/^avail/i.test(o.status);
-    const sub=o.sub&&o.sub!==o.comm&&o.comm?`<span class="sub">, ${hl(o.sub,terms)}</span>`:"";
-    const where=o.loc?`<div class="loc1">${hl(o.comm||o.sub,terms)}${sub}</div>`:'<div class="loc1 sub">Location not set</div>';
+    const aL=o.area?AREAS[o.area].label:"", main1=o.comm||o.sub;
+    const parts=[]; if(aL&&!(main1||"").toLowerCase().includes(aL.toLowerCase().replace(/^the /,""))) parts.push(esc(aL));
+    if(main1) parts.push(hl(main1,terms));
+    const sub=o.sub&&o.comm&&o.sub!==o.comm?`<span class="sub">, ${hl(o.sub,terms)}</span>`:"";
+    const where=parts.length?`<div class="loc1" title="${esc([aL,o.comm,o.sub].filter(Boolean).join(", "))}">${parts.join(", ")}${sub}</div>`:'<div class="loc1 sub">Location not set</div>';
     const proj=`<div class="projline">${hl(o.project,terms)}<span class="sub">${o.project?", ":""}${o.unit?`Unit ${hl(o.unit,terms)}`:"Unit not set"}</span></div>`;
     const main=`<tr class="row${url?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
       <td class="c-bed"><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.ptype?`<div class="sub ptype">${hl(o.ptype,terms)}</div>`:""}</td>
       <td class="c-loc">${where}${proj}</td>
-      <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:'<span class="sub">\u2014</span>'}</td>
+      <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
       <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="sub">${typeLabel(o)}</div></td>
       <td class="c-ref"><div class="lst">
         <span><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<br><span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
@@ -532,6 +567,8 @@ $("#use").onchange=e=>{S.use=e.target.value;S.limit=100;render()};
 $("#ptype").onchange=e=>{S.ptype=e.target.value;S.limit=100;render()};
 $("#sort").onchange=e=>{if(e.target.value==="custom")return;const [k,d]=e.target.value.split(":");S.sort=k;S.dir=+d;S.limit=100;render()};
 $("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",area:"",loc:"",ptype:"",use:"",web:"",limit:100,open:null});$("#q").value="";$("#use").value="";$("#ptype").value="";fillLocs();syncChips();render();$("#q").focus()};
+$("#ftoggle").onclick=()=>{const f=$("#filters"),o=f.classList.toggle("open");$("#ftoggle").setAttribute("aria-expanded",String(o))};
+if(matchMedia("(max-width:760px)").matches) $("#q").placeholder="Ref, project, unit or area";
 $("#more").onclick=()=>{S.limit+=100;render()};
 document.querySelectorAll("thead th.sort").forEach(th=>th.onclick=()=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k;
   if(S.sort===k)S.dir*=-1;else{S.sort=k;S.dir=(k==="refN")?-1:1}render()});
