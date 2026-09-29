@@ -2241,6 +2241,58 @@ function openComments(c){
   });
   document.body.appendChild(veil);
 }
+
+/* all feedback for this project — reads the shared store when online, this device otherwise */
+async function fbAll(){
+  const out = {};
+  if(!_fbOnline()){ const n=notesLoad(); for(const k of Object.keys(n)) out[k]=n[k]; return out; }
+  const dir = 'feedbacks/'+_fbProject();
+  const cids = ((await _gh(dir+'?ref='+FEEDBACK_STORE.branch))||[]).filter(f=>f.type==='dir').map(f=>f.name);
+  for(const cid of cids){ const arr = await fbList(cid, true); if(arr.length) out[cid]=arr; }
+  return out;
+}
+function feedbackText(n){
+  let out = `Feedback — ${CAMPAIGN.project} creatives\n${location.href.split('#')[0]}\n`;
+  for(const cid of Object.keys(n)){
+    const c = CREATIVES.find(x=>x.id===cid);
+    out += `\n■ ${cid}${c?' — '+c.name:''}\n`;
+    for(const note of n[cid]) out += `  • ${note.text}  (${note.by}, ${note.at})\n`;
+  }
+  return out;
+}
+async function openFeedback(){
+  const veil = el(`<div class="cmt-veil"><div class="cmt">
+    <h3>All feedback <span class="count"></span></h3>
+    <div class="sub">${_fbOnline()?'Shared feedback log — everything reviewers have added to this project.':'Collected on this device. Send them to the team:'}</div>
+    <div class="list"><div class="sub" style="padding:8px 0">Loading…</div></div>
+    <div class="row">
+      <button class="ui solid f-wa">Send via WhatsApp</button>
+      <button class="ui f-copy">Copy all</button>
+      ${_fbOnline()?'':'<button class="ui f-clear">Clear all</button>'}
+      <button class="ui c-close">Close</button>
+    </div>
+  </div></div>`);
+  document.body.appendChild(veil);
+  let n = {};
+  try{ n = await fbAll(); }catch(e){ veil.querySelector('.list').innerHTML='<div class="sub" style="padding:8px 0">Feedback is offline right now.</div>'; }
+  const total = Object.values(n).reduce((s,a)=>s+a.length,0);
+  veil.querySelector('.count').textContent = `· ${total} comment${total===1?'':'s'}`;
+  veil.querySelector('.list').innerHTML = Object.keys(n).map(cid=>{
+    const c=CREATIVES.find(x=>x.id===cid);
+    return `<div class="byc">${esc(cid)}${c?' — '+esc(c.name):''}</div>` +
+      n[cid].map(x=>`<div class="note"><div class="who"><span>${esc(x.by)} · ${esc(x.at)}</span></div><div dir="auto">${esc(x.text)}</div></div>`).join('');
+  }).join('') || '<div class="sub" style="padding:8px 0">No feedback yet.</div>';
+  veil.addEventListener('click', e=>{ if(e.target===veil) veil.remove(); });
+  veil.querySelector('.c-close').addEventListener('click', ()=>veil.remove());
+  veil.querySelector('.f-wa').addEventListener('click', ()=>{ window.open('https://wa.me/?text='+encodeURIComponent(feedbackText(n)), '_blank'); });
+  veil.querySelector('.f-copy').addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(feedbackText(n)); toast('Copied'); }
+    catch(e){ prompt('Copy the feedback:', feedbackText(n)); }
+  });
+  veil.querySelector('.f-clear')?.addEventListener('click', ()=>{
+    if(confirm('Delete all comments saved on this device?')){ notesSave({}); veil.remove(); }
+  });
+}
 document.getElementById('fbFab').addEventListener('click', openFeedback);
 updateFab();
 
