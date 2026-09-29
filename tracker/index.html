@@ -47,6 +47,7 @@ header.top{padding:28px 0 18px;display:flex;align-items:flex-end;justify-content
 .tools{display:flex;gap:8px;align-items:center}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px}
 .btn:hover{border-color:var(--muted)}
+.btn[hidden]{display:none}
 .btn:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* Search panel */
@@ -282,6 +283,7 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
 .gate p{margin:0 0 20px;color:var(--muted);font-size:14px}
 .gate input{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;font-size:18px;letter-spacing:.04em}
 .gate input:focus{border-color:var(--accent);outline:none}
+#admPass,#pubPass{-webkit-text-security:disc;text-security:disc;letter-spacing:.3em}
 .gate input{-webkit-text-security:disc;text-security:disc;letter-spacing:.3em;font-variant-numeric:tabular-nums}
 .gate input::placeholder{letter-spacing:0}
 .gate button{width:100%;margin-top:10px;border:0;border-radius:12px;padding:13px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:15px;cursor:pointer}
@@ -301,12 +303,12 @@ body.locked{overflow:hidden}
       <p id="asof"></p>
     </div>
     <div class="tools">
-      <label class="btn" title="Load a newer Salesforce export (.xlsx)">
+      <button type="button" class="btn" id="importbtn" title="Import a newer Salesforce export (.xlsx)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
-        <span class="lbl">Load new export</span>
-        <input id="file" type="file" accept=".xlsx,.xls,.csv" class="sr">
-      </label>
-      <button class="btn" id="pubbtn" title="Publish data or change the passcode" aria-label="Publish">
+        <span class="lbl">Import export</span>
+      </button>
+      <input id="file" type="file" accept=".xlsx,.xls,.csv" class="sr" tabindex="-1" aria-hidden="true">
+      <button class="btn" id="pubbtn" title="Publish data or change the passcode" aria-label="Publish" hidden>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9a4 4 0 0 1-1 8.9"/><path d="M12 12v9M8.5 15.5 12 12l3.5 3.5"/></svg>
       </button>
       <button class="btn" id="lock" title="Lock this device" aria-label="Lock">
@@ -415,6 +417,15 @@ body.locked{overflow:hidden}
   <footer id="foot"></footer>
 </main>
 <div class="toast" id="toast" role="status"></div>
+<div class="modal" id="adm" hidden>
+  <form id="admForm" autocomplete="off">
+    <h2>Import passcode</h2>
+    <p>Importing and publishing are for the Marketing team. Enter the import passcode to continue.</p>
+    <label class="fld"><span>Import passcode</span><input id="admPass" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" required></label>
+    <div class="mrow"><button type="button" class="btn" id="admCancel">Cancel</button><button type="submit" class="btn primary">Continue</button></div>
+    <div class="log" id="admLog" role="alert"></div>
+  </form>
+</div>
 <div class="modal" id="pub" hidden>
   <form id="pubForm" autocomplete="off">
     <h2>Publish to the tracker</h2>
@@ -820,7 +831,7 @@ $("#gateForm").addEventListener("submit",async e=>{
   catch(err){ $("#gateErr").textContent=err.wrong?"That passcode didn\u2019t work. Passcodes change weekly, so ask Marketing for this week\u2019s.":"Listings couldn\u2019t load. Check your connection and try again."; $("#pass").select(); }
   finally{ btn.disabled=false; btn.textContent="Unlock"; }
 });
-$("#lock").onclick=()=>{ store.del("lt-pass"); location.reload(); };
+$("#lock").onclick=()=>{ store.del("lt-pass"); store.del("lt-admin"); location.reload(); };
 
 /* ---------- publish from the browser: encrypt here, push to GitHub, no server involved ---------- */
 const REPO="ranielponesto/decks", GH="https://api.github.com/repos/"+REPO+"/contents/";
@@ -840,6 +851,20 @@ async function gh(path,tok,init){ const r=await fetch(GH+path,{...init,cache:"no
   if(!r.ok&&r.status!==404) throw new Error("GitHub error "+r.status+" on "+path); return r; }
 async function ghPut(path,tok,b64,msg){ const cur=await gh(path,tok); const sha=cur.status===404?undefined:(await cur.json()).sha;
   const r=await gh(path,tok,{method:"PUT",body:JSON.stringify({message:msg,content:b64,sha,branch:"main"})}); if(!r.ok) throw new Error("Couldn\u2019t write "+path+" ("+r.status+")"); return r.json(); }
+/* ---------- import passcode: gates the import/publish tools (the GitHub token still does the real authorising) ---------- */
+const ADMIN_HASH="a8b2fc63a1b6cf1673111e55d1eafa422ce7e9da00ef40407fd99a9b15c96342", ADMIN_SALT="capstone-tracker-import";
+async function sha256(s){ const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+const isAdmin=()=>store.get("lt-admin")==="1";
+function applyAdmin(){ $("#pubbtn").hidden=!isAdmin(); }
+let admAfter=null;
+function askAdmin(then){ admAfter=then; $("#adm").hidden=false; $("#admPass").value=""; $("#admLog").textContent=""; $("#admPass").focus(); }
+$("#admCancel").onclick=()=>{ $("#adm").hidden=true; };
+$("#admPass").addEventListener("input",e=>{ const v=e.target.value.replace(/\D/g,""); if(v!==e.target.value) e.target.value=v; });
+$("#admForm").addEventListener("submit",async e=>{ e.preventDefault();
+  if(await sha256(ADMIN_SALT+$("#admPass").value)===ADMIN_HASH){ store.set("lt-admin","1"); applyAdmin(); $("#adm").hidden=true; const f=admAfter; admAfter=null; if(f) f(); }
+  else { $("#admLog").className="log err"; $("#admLog").textContent="That import passcode didn\u2019t work."; $("#admPass").select(); } });
+$("#importbtn").onclick=()=>{ const pick=()=>$("#file").click(); if(isAdmin()) pick(); else askAdmin(pick); };
+applyAdmin();
 function showBanner(){ if(!DB||!DB.raw) return; const b=$("#banner"); b.hidden=false;
   $("#bannerTxt").textContent=`New export loaded on this device only (${fmt(DB.list.length)} listings, ${DB.asOf.replace(/^as of\s*/i,"as of ")}). Publish it so everyone sees it.`; }
 $("#bannerDrop").onclick=()=>{ store.del("lt-upload"); location.reload(); };
@@ -848,7 +873,7 @@ function openPub(){ if(!DB||!DB.raw) return alert("Nothing loaded yet."); const 
   $("#pubWhat").textContent=`${fmt(DB.list.length)} listings (${fmt(avail)} available), ${DB.asOf.replace(/^as of\s*/i,"as of ")}. Everyone will need the passcode below from the moment this goes live.`;
   $("#pubPass").value=store.get("lt-pass")||""; $("#pubTok").value=store.get("lt-gh")||""; $("#pubLog").textContent=""; $("#pubLog").className="log";
   ($("#pubTok").value?$("#pubPass"):$("#pubTok")).focus(); }
-$("#pubbtn").onclick=openPub; $("#bannerPub").onclick=openPub;
+$("#pubbtn").onclick=()=>isAdmin()?openPub():askAdmin(openPub); $("#bannerPub").onclick=()=>isAdmin()?openPub():askAdmin(openPub);
 $("#pubCancel").onclick=()=>{ $("#pub").hidden=true; };
 $("#pubForm").addEventListener("submit",async e=>{
   e.preventDefault(); const pw=$("#pubPass").value.trim(), tok=$("#pubTok").value.trim(), log=$("#pubLog"), go=$("#pubGo");
