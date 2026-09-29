@@ -73,8 +73,6 @@ avail = sum(1 for r in rows if str(r[cref] or "").upper().startswith("CAP-") and
             and not test.search(f"{r[cpj] or ''} {r[ccm] or ''} {r[cun] or ''}"))
 
 ver = re.sub(r"\D", "", as_of)[:14] or datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-page = ROOT / "tracker/index.html"
-page.write_text(re.sub(r'const FEED_VERSION="[^"]*"', f'const FEED_VERSION="{ver}"', page.read_text()))
 hub = ROOT / "app/index.html"
 if hub.exists():
     h = hub.read_text()
