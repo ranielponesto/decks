@@ -109,9 +109,9 @@ tbody tr.row.live:hover td{background:var(--soft)}
 .cta{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:8px;white-space:nowrap;letter-spacing:.01em}
 .cta:hover{filter:brightness(1.12)}
 .cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.bed{display:block;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.2}
+.bed{display:inline-block;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.2}
 .mic{font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
-.ptype{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.ptype{display:block;width:max-content;margin-top:6px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px;white-space:nowrap}
 .bed small{font-size:12px;font-weight:400;color:var(--muted);margin-left:3px}
 .loc1{font-weight:500;font-size:15px}
 .c-comm .sub,.c-proj .sub{font-size:12.5px;margin-top:2px}
@@ -128,6 +128,7 @@ td.c-agent{white-space:nowrap}
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .av{background:hsl(var(--h) 28% 26%);color:hsl(var(--h) 45% 86%)} }
 .aname{font-weight:500}
 .deal{display:none}
+.mgd{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;font-size:10px;font-weight:700;background:var(--ok);color:#fff;margin-left:6px;vertical-align:2px}
 td.c-furn:empty::after{content:"\2014";color:var(--muted)}
 .furn.mob{display:none}
 .furn{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
@@ -238,6 +239,7 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   td.c-bed{grid-column:1/-1;grid-row:1;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;overflow:hidden;line-height:1}
   .deal{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 5px;border-radius:5px;background:var(--soft);color:var(--accent);white-space:nowrap;flex:none}
   .deal.sale{background:var(--accent);color:var(--accent-ink)}
+  .mgd{margin:0;flex:none;width:19px;height:19px}
   td.c-bed .bed{display:inline-block;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:5px;padding:2px 5px;line-height:1.2;flex:none}
   td.c-bed .bed small{font-size:11px;margin-left:2px}
   td.c-bed .ptype{margin:0;padding:2px 5px;font-size:11px;flex:none;border-radius:5px}
@@ -407,6 +409,12 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="web" data-v="" aria-pressed="true">Any portal</button>
         <button class="chip" data-f="web" data-v="1" aria-pressed="false">Live on website</button>
       </div>
+      <div class="group" role="group" aria-label="Managed">
+        <span>Managed</span>
+        <button class="chip" data-f="mg" data-v="" aria-pressed="true">Any</button>
+        <button class="chip" data-f="mg" data-v="1" aria-pressed="false">Managed by Capstone</button>
+        <button class="chip" data-f="mg" data-v="0" aria-pressed="false">Not managed</button>
+      </div>
       <div class="group price" role="group" aria-label="Price range">
         <span>Price</span>
         <div class="rng">
@@ -546,7 +554,7 @@ function parseTable(asOf,header,rows){
     const pr=parseFloat(String(g(r,"price")).replace(/[^\d.]/g,""));
     let unit=g(r,"unit"); if(unit==="0") unit="";
     const o={ref,refN:parseInt(ref.replace(/\D/g,""),10)||0,project,comm:g(r,"comm"),sub:g(r,"sub"),unit,status:g(r,"status"),beds,bedNote,
-      price:isFinite(pr)&&pr>0?pr:null,agent:g(r,"agent"),rtype,portals:g(r,"portals"),furn:furnCode(g(r,"furn")),ptype:ptypeOf(g(r,"ptype")),managed:g(r,"managed"),
+      price:isFinite(pr)&&pr>0?pr:null,agent:g(r,"agent"),rtype,portals:g(r,"portals"),furn:furnCode(g(r,"furn")),ptype:ptypeOf(g(r,"ptype")),managed:g(r,"managed"),mg:/^(yes|true|1)$/i.test(g(r,"managed")),
       deal:/rent/i.test(rtype)?"rent":"sale",use:/commercial/i.test(rtype)?"com":"res",offplan:/off ?plan/i.test(rtype)};
     if(o.comm&&project){(commByProj[project]=commByProj[project]||{})[o.comm]=((commByProj[project]||{})[o.comm]||0)+1}
     out.push(o);
@@ -569,7 +577,7 @@ function fromSheetArrays(aoa){
 
 /* ---------- state ---------- */
 let DB,LOCS=[];
-const S={q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],use:"",web:"",pmin:null,pmax:null,sort:"refN",dir:-1,limit:100,open:null};
+const S={q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],use:"",web:"",mg:"",pmin:null,pmax:null,sort:"refN",dir:-1,limit:100,open:null};
 function load(data,source){
   DB=data;
   fillLocs();
@@ -681,6 +689,7 @@ function pass(o,opt={}){
   if(S.deal&&o.deal!==S.deal) return false;
   if(S.use&&o.use!==S.use) return false;
   if(S.web&&!webURL(o)) return false;
+  if(S.mg==="1"&&!o.mg) return false; if(S.mg==="0"&&o.mg) return false;
   if(S.area&&o.area!==S.area) return false;
   if(!opt.skipLoc&&S.locs.length&&!S.locs.includes(o.loc)) return false;
   if(S.types.length&&!S.types.includes(o.ptype)) return false;
@@ -724,8 +733,8 @@ function render(){
     if(res.length&&off.length===res.length){note.hidden=false;note.textContent=`${off[0].ref} is marked “${off[0].status}”, so it isn’t in the available list. Showing it anyway.`}
     else note.hidden=true;
   } else note.hidden=true;
-  { const n=[S.status!=="Available",S.locs.length,S.use,S.types.length,S.web,S.pmin!=null||S.pmax!=null].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
-  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.locs.length||S.use||S.web||S.area||S.types.length||S.pmin!=null||S.pmax!=null);
+  { const n=[S.status!=="Available",S.locs.length,S.use,S.types.length,S.web,S.mg,S.pmin!=null||S.pmax!=null].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
+  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.locs.length||S.use||S.web||S.mg||S.area||S.types.length||S.pmin!=null||S.pmax!=null);
   { const v=S.sort+":"+S.dir, sel=$("#sort"); sel.value=[...sel.options].some(o=>o.value===v)?v:"custom"; }
   document.querySelectorAll("thead th.sort").forEach(th=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k; if(!refMode&&k===S.sort) th.dataset.dir=S.dir>0?"\u2191":"\u2193"; else delete th.dataset.dir;});
   const tb=$("#tb");
@@ -746,7 +755,7 @@ function render(){
     const ini=(o.agent||"").split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?";
     const hue=[...(o.agent||"")].reduce((h,c)=>(h*31+c.charCodeAt(0))%360,7);
     const main=`<tr class="row${url?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
-      <td class="c-bed"><span class="deal ${o.deal}">${o.offplan?"Off-plan":o.deal==="rent"?"Rent":"Sale"}</span><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.ptype?`<span class="ptype">${hl(o.ptype,terms)}</span>`:""}${o.furn?`<span class="furn mob ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
+      <td class="c-bed"><span class="deal ${o.deal}">${o.offplan?"Off-plan":o.deal==="rent"?"Rent":"Sale"}</span><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.mg?'<span class="mgd" title="Managed by Capstone">M</span>':""}${o.ptype?`<span class="ptype">${hl(o.ptype,terms)}</span>`:""}${o.furn?`<span class="furn mob ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
       <td class="c-comm">${where}<span class="unit mob ${o.unit?"":"none"}">${o.unit?hl(o.unit,terms):"No unit"}</span></td>
       <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="mic">${typeLabel(o)}</div></td>
       <td class="c-proj">${proj}</td>
@@ -809,13 +818,13 @@ function similar(t){
 function syncHash(){
   const p=new URLSearchParams();
   if(S.q)p.set("q",S.q); if(S.status!=="Available")p.set("status",S.status||"all");
-  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.locs.length)p.set("loc",S.locs.join("|")); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.area)p.set("area",S.area); if(S.types.length)p.set("type",S.types.join("|")); if(S.pmin!=null)p.set("pmin",S.pmin); if(S.pmax!=null)p.set("pmax",S.pmax); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
+  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.locs.length)p.set("loc",S.locs.join("|")); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.mg)p.set("managed",S.mg); if(S.area)p.set("area",S.area); if(S.types.length)p.set("type",S.types.join("|")); if(S.pmin!=null)p.set("pmin",S.pmin); if(S.pmax!=null)p.set("pmax",S.pmax); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
   const h=p.toString(); try{history.replaceState(null,"",h?"#"+h:location.pathname+location.search)}catch(e){}
 }
 function readHash(){
   const p=new URLSearchParams(location.hash.slice(1));
   S.q=p.get("q")||""; const st=p.get("status"); S.status=st==null?"Available":(st==="all"?"":st);
-  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.locs=(p.get("loc")||"").split("|").filter(Boolean); S.use=p.get("use")||""; S.web=p.get("web")||""; S.area=AREAS[p.get("area")]?p.get("area"):""; S.types=(p.get("type")||"").split("|").filter(Boolean); S.pmin=p.get("pmin")?+p.get("pmin"):null; S.pmax=p.get("pmax")?+p.get("pmax"):null;
+  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.locs=(p.get("loc")||"").split("|").filter(Boolean); S.use=p.get("use")||""; S.web=p.get("web")||""; S.mg=["1","0"].includes(p.get("managed"))?p.get("managed"):""; S.area=AREAS[p.get("area")]?p.get("area"):""; S.types=(p.get("type")||"").split("|").filter(Boolean); S.pmin=p.get("pmin")?+p.get("pmin"):null; S.pmax=p.get("pmax")?+p.get("pmax"):null;
   const so=(p.get("sort")||"refN:-1").split(":"); S.sort=["refN","project","beds","price","loc","agent"].includes(so[0])?so[0]:"refN"; S.dir=so[1]==="1"?1:-1;
   $("#q").value=S.q; $("#use").value=S.use; if(DB){fillLocs();fillTypes();priceBounds();} syncChips();
 }
@@ -842,7 +851,7 @@ $("#types").addEventListener("click",e=>{ const c=e.target.closest("[data-type]"
   S.types=v?(S.types.includes(v)?S.types.filter(x=>x!==v):[...S.types,v]):[]; S.limit=100; fillTypes(); render(); });
 $("#use").onchange=e=>{S.use=e.target.value;priceBounds();S.limit=100;render()};
 $("#sort").onchange=e=>{if(e.target.value==="custom")return;const [k,d]=e.target.value.split(":");S.sort=k;S.dir=+d;S.limit=100;render()};
-$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],use:"",web:"",pmin:null,pmax:null,limit:100,open:null});$("#q").value="";$("#use").value="";fillLocs();fillTypes();priceBounds();syncChips();render();$("#q").focus()};
+$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],use:"",web:"",mg:"",pmin:null,pmax:null,limit:100,open:null});$("#q").value="";$("#use").value="";fillLocs();fillTypes();priceBounds();syncChips();render();$("#q").focus()};
 $("#ftoggle").onclick=()=>{const f=$("#filters"),o=f.classList.toggle("open");$("#ftoggle").setAttribute("aria-expanded",String(o))};
 if(matchMedia("(max-width:760px)").matches) $("#q").placeholder="Ref, project, unit or area";
 $("#more").onclick=()=>{S.limit+=100;render()};
