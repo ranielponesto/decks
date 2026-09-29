@@ -495,7 +495,7 @@ const savedTheme=store.get(THEMEKEY); if(savedTheme) root.dataset.theme=savedThe
 $("#theme").onclick=()=>{const dark=root.dataset.theme?root.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;root.dataset.theme=dark?"light":"dark";store.set(THEMEKEY,root.dataset.theme)};
 
 /* ---------- parsing (shared by embedded snapshot and uploaded exports) ---------- */
-const COLS={project:/project name/i,group:/leasing project/i,comm:/^comm/i,sub:/sub community/i,unit:/unit number/i,ref:/ref no/i,status:/^status$/i,beds:/bedroom/i,price:/listing price/i,agent:/owner name/i,rtype:/record type/i,portals:/portals/i,furn:/furnish/i,ptype:/property type|unit type|property sub ?type/i,managed:/managed by/i};
+const COLS={project:/project name/i,group:/leasing project/i,offproj:/off ?plan project/i,comm:/^comm/i,sub:/sub community/i,unit:/unit number/i,ref:/ref no/i,status:/^status$/i,beds:/bedroom/i,price:/listing price/i,agent:/owner name/i,rtype:/record type/i,portals:/portals/i,furn:/furnish/i,ptype:/property type|unit type|property sub ?type/i,managed:/managed by/i};
 function furnCode(v){ v=String(v||"").trim().toLowerCase(); if(!v) return "";
   if(/^uf$|unfurn|not furn|^no$/.test(v)) return "UF";
   if(/^sf$|^pf$|semi|part/.test(v)) return "SF";
@@ -537,7 +537,7 @@ function parseTable(asOf,header,rows){
   const out=[];const commByProj={};
   for(const r of rows){
     const ref=g(r,"ref"); if(!/^CAP-/i.test(ref)) continue;
-    const project=g(r,"project")||g(r,"group");
+    const project=g(r,"project")||g(r,"group")||g(r,"offproj");
     const blob=(project+" "+g(r,"comm")+" "+g(r,"unit")).toLowerCase();
     if(/\btest\b/.test(blob)||/test (sales|res|comm)/.test(blob)) continue;
     const rtype=g(r,"rtype");
