@@ -251,6 +251,8 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
 .gate p{margin:0 0 20px;color:var(--muted);font-size:14px}
 .gate input{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;font-size:18px;letter-spacing:.04em}
 .gate input:focus{border-color:var(--accent);outline:none}
+.gate input{-webkit-text-security:disc;text-security:disc;letter-spacing:.3em;font-variant-numeric:tabular-nums}
+.gate input::placeholder{letter-spacing:0}
 .gate button{width:100%;margin-top:10px;border:0;border-radius:12px;padding:13px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:15px;cursor:pointer}
 .gate button:disabled{opacity:.6;cursor:wait}
 .gate .err{color:#C0392B;font-size:13px;margin-top:10px;min-height:1.3em}
@@ -379,7 +381,7 @@ body.locked{overflow:hidden}
   <form id="gateForm" autocomplete="off">
     <h2>Listings tracker</h2>
     <p>Enter this week’s passcode to view listings.</p>
-    <input id="pass" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" aria-label="Passcode" placeholder="Passcode" required>
+    <input id="pass" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="Passcode" placeholder="Passcode" required>
     <button id="unlock" type="submit">Unlock</button>
     <div class="err" id="gateErr" role="alert"></div>
   </form>
@@ -749,6 +751,7 @@ async function unlock(pw){
   return JSON.parse(txt);
 }
 function opened(seed){ $("#gate").hidden=true; document.body.classList.remove("locked"); boot(seed); }
+$("#pass").addEventListener("input",e=>{const v=e.target.value.replace(/\D/g,""); if(v!==e.target.value) e.target.value=v;});
 $("#gateForm").addEventListener("submit",async e=>{
   e.preventDefault(); const pw=$("#pass").value; if(!pw) return;
   const btn=$("#unlock"); btn.disabled=true; btn.textContent="Checking\u2026"; $("#gateErr").textContent="";
