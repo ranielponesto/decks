@@ -119,6 +119,7 @@ tbody tr.row.live:hover td{background:var(--soft)}
 .pname{font-weight:500}
 .unit{font-size:12px;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:2px 7px;white-space:nowrap;color:var(--ink)}
 .unit.none{border-style:dashed;color:var(--muted);background:none}
+.unit.mob{display:none}
 td.c-rate{padding-right:28px}
 td.c-agent{white-space:nowrap}
 .agent{display:inline-flex;align-items:center;gap:9px}
@@ -234,25 +235,28 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   tbody td{padding:0;border:0;min-width:0}
   tbody td:first-child,tbody td:last-child{padding:0}
   /* line 1: Rent/Sale, beds, type, furnishing, rate on the right */
-  td.c-bed{grid-column:1;grid-row:1;display:flex;align-items:center;gap:3px 4px;flex-wrap:wrap;line-height:1}
-  .deal{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border-radius:5px;background:var(--soft);color:var(--accent);white-space:nowrap;flex:none}
+  td.c-bed{grid-column:1/-1;grid-row:1;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;overflow:hidden;line-height:1}
+  .deal{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 5px;border-radius:5px;background:var(--soft);color:var(--accent);white-space:nowrap;flex:none}
   .deal.sale{background:var(--accent);color:var(--accent-ink)}
-  td.c-bed .bed{display:inline-block;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:5px;padding:2px 6px;line-height:1.2;flex:none}
+  td.c-bed .bed{display:inline-block;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:5px;padding:2px 5px;line-height:1.2;flex:none}
   td.c-bed .bed small{font-size:11px;margin-left:2px}
-  td.c-bed .ptype{margin:0;padding:2px 6px;font-size:11.5px;flex:none;border-radius:5px}
+  td.c-bed .ptype{margin:0;padding:2px 5px;font-size:11px;flex:none;border-radius:5px}
   td.c-furn{display:none}
-  .furn.mob{display:inline-block;padding:2px 6px;font-size:11px;flex:none;border-radius:5px}
-  td.c-rate{grid-column:2;grid-row:1;text-align:right;padding-right:0}
+  .furn.mob{display:inline-block;padding:2px 5px;font-size:10.5px;flex:none;border-radius:5px}
+  td.c-rate{grid-column:2;grid-row:2;text-align:right;padding-right:0;margin-top:7px;align-self:center}
   td.c-rate .price{font-size:15px}
+  td.c-rate .price small{font-size:11px}
   td.c-rate .mic{display:none}
   /* line 2: project with unit; line 3: community */
-  td.c-proj{grid-column:1/-1;grid-row:2;margin-top:6px}
+  td.c-proj{grid-column:1;grid-row:2;margin-top:7px}
   td.c-proj .projline{gap:3px 6px;flex-wrap:nowrap;overflow:hidden}
-  td.c-proj .pname{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  td.c-proj .pname{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;display:block}
   .unit{font-size:11px;padding:1px 5px;flex:none}
+  td.c-proj .unit{display:none}
+  .unit.mob{display:inline-block;margin-left:auto;align-self:center}
   td.c-comm{grid-column:1/-1;grid-row:3;margin-top:2px;display:flex;gap:5px;align-items:baseline;flex-wrap:nowrap;overflow:hidden;white-space:nowrap}
   td.c-comm .loc1{font-size:12.5px;font-weight:500;flex:none}
-  td.c-comm .sub{margin:0;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+  td.c-comm .sub{margin:0;font-size:12px;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
   td.c-comm .sub::before{content:"\00b7\00a0"}
   td.c-comm .loc1.sub::before{content:none}
   /* line 4: agent left, reference and website button right */
@@ -743,7 +747,7 @@ function render(){
     const hue=[...(o.agent||"")].reduce((h,c)=>(h*31+c.charCodeAt(0))%360,7);
     const main=`<tr class="row${url?" live":""}" tabindex="0" data-ref="${esc(o.ref)}" aria-expanded="${S.open===o.ref}">
       <td class="c-bed"><span class="deal ${o.deal}">${o.offplan?"Off-plan":o.deal==="rent"?"Rent":"Sale"}</span><span class="bed">${o.beds==null?'<span class="sub">\u2014</span>':o.beds===0?"Studio":o.beds+`<small>bed${o.bedNote?" "+esc(o.bedNote):""}</small>`}</span>${o.ptype?`<span class="ptype">${hl(o.ptype,terms)}</span>`:""}${o.furn?`<span class="furn mob ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
-      <td class="c-comm">${where}</td>
+      <td class="c-comm">${where}<span class="unit mob ${o.unit?"":"none"}">${o.unit?hl(o.unit,terms):"No unit"}</span></td>
       <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="mic">${typeLabel(o)}</div></td>
       <td class="c-proj">${proj}</td>
       <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
