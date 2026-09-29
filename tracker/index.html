@@ -379,7 +379,7 @@ body.locked{overflow:hidden}
   <form id="gateForm" autocomplete="off">
     <h2>Listings tracker</h2>
     <p>Enter this week’s passcode to view listings.</p>
-    <input id="pass" type="password" inputmode="text" autocomplete="current-password" aria-label="Passcode" placeholder="Passcode" required>
+    <input id="pass" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" aria-label="Passcode" placeholder="Passcode" required>
     <button id="unlock" type="submit">Unlock</button>
     <div class="err" id="gateErr" role="alert"></div>
   </form>
