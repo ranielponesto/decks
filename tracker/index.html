@@ -150,6 +150,8 @@ td.c-furn:empty::after{content:"\2014";color:var(--muted)}
 .ms-opt span{flex:1;min-width:0}
 .ms-opt small{color:var(--muted);font-variant-numeric:tabular-nums}
 .ms-opt.zero{opacity:.5}
+.ms-all{font-weight:600;background:var(--soft);margin-top:8px;position:sticky;top:0;z-index:1}
+.ms-all:first-child{margin-top:0}
 .ms-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
 .ftoggle{display:none}
 .fcount{background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11px;font-weight:600;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
@@ -456,11 +458,11 @@ const FURN={FF:"Fully furnished",SF:"Semi or partly furnished",UF:"Unfurnished"}
 const AREAS={
   pearl:{label:"The Pearl",re:/pearl|gewan|qanat/i},
   lusail:{label:"Lusail",re:/lusail|marina district|fox hills|energy city|waterfront|erkyah|qetaifan|al kharaej|seef lusail|entertainment city|al khareej|burj damac marina|mamsha bay|^vera$|yasmeen city/i},
-  doha:{label:"Doha",list:["west bay","west bay lagoon","old airport road","fereej bin mahmoud","al mansoura","msheireb downtown doha","musheireb","al muntazah","najma","al sadd","abu hamour","salata","umm ghuwailina","al waab","al gharrafa","fereej bin omran","ain khaled","al ghanim","al maamoura","al duhail","salwa road","al jasra","doha al jadeed","al najada","ras abu aboud","al thumama","al nasr","al hilal","al aziziyah","al markhiya","al messila","madinat khalifa","onaiza","d-ring","corniche road","almuraikh","al muraikh","muaither area","izghawa","industrial area","al dafna","al hitmi","bin mahmoud","fereej abdel aziz","al nuaija","al matar al qadeem","al luqta","new salata","al rumeilah","al bidda","al sadd area","al mirqab","al mirqab al jadeed","b-ring road","c-ring","diplomatic area","fereej abdul aziz","fereej kulaib","jeliah","onaiza 65","mesaimeer","wadi al sail"]}
+  doha:{label:"Doha"}
 };
 function areaOf(loc){ if(!loc) return ""; const l=loc.toLowerCase();
   if(AREAS.pearl.re.test(l)) return "pearl"; if(AREAS.lusail.re.test(l)) return "lusail";
-  if(AREAS.doha.list.includes(l)) return "doha"; return ""; }
+  return "doha"; }
 function ptypeOf(v){ v=String(v||"").trim(); if(!v) return ""; v=v.toLowerCase();
   const map=[[/apart|flat/,"Apartment"],[/pent/,"Penthouse"],[/town/,"Townhouse"],[/villa/,"Villa"],[/duplex/,"Duplex"],[/office/,"Office"],[/show ?room/,"Showroom"],[/shop|retail/,"Retail"],[/ware|store/,"Warehouse"],[/land|plot/,"Land"],[/hotel/,"Hotel apartment"]];
   for(const [re,l] of map) if(re.test(v)) return l; return v.replace(/\b\w/g,c=>c.toUpperCase()); }
@@ -539,23 +541,31 @@ function fillLocs(){
 }
 function locLabel(){
   const n=S.locs.length, b=$("#locbtn");
-  $("#loclbl").textContent=n===0?(S.area?"All of "+AREAS[S.area].label:"All locations"):n===1?S.locs[0]:n+" locations";
+  let lbl=n===0?(S.area?"All of "+AREAS[S.area].label:"All locations"):n===1?S.locs[0]:n+" locations";
+  if(n>1){ const full=areaGroups().filter(([a,ls])=>ls.every(l=>S.locs.includes(l))); const rest=S.locs.filter(l=>!full.some(([a,ls])=>ls.includes(l))).length;
+    if(full.length&&!rest) lbl="All "+full.map(([a])=>AREAS[a].label).join(", "); else if(full.length) lbl="All "+full.map(([a])=>AREAS[a].label).join(", ")+" + "+rest; }
+  $("#loclbl").textContent=lbl;
   b.classList.toggle("on",n>0); b.title=S.locs.join(", ");
 }
 function drawLocList(){
   const q=$("#locq").value.trim().toLowerCase();
   const cnt={}; for(const o of DB.list) if(o.loc&&pass(o,{skipLoc:true})) cnt[o.loc]=(cnt[o.loc]||0)+1;
-  const groups=S.area?[[S.area,LOCS]]:[["pearl",[]],["lusail",[]],["doha",[]],["",[]]];
-  if(!S.area){ const ix={pearl:0,lusail:1,doha:2,"":3}; const aOf={}; for(const o of DB.list) if(o.loc) aOf[o.loc]=o.area; for(const l of LOCS) groups[ix[aOf[l]||""]][1].push(l); }
+  const groups=areaGroups();
   let h="";
   for(const [a,ls] of groups){
     const vis=ls.filter(l=>!q||l.toLowerCase().includes(q)); if(!vis.length) continue;
     // selected first, then by listings
     vis.sort((x,y)=>(S.locs.includes(y)-S.locs.includes(x))||((cnt[y]||0)-(cnt[x]||0))||x.localeCompare(y));
-    if(!S.area) h+=`<div class="ms-h">${a?AREAS[a].label:"Other areas"}</div>`;
+    const all=ls.every(l=>S.locs.includes(l)), total=ls.reduce((s,l)=>s+(cnt[l]||0),0);
+    h+=`<label class="ms-opt ms-all"><input type="checkbox" data-area="${a}"${all?" checked":""}><span>All ${esc(AREAS[a].label)}</span><small>${fmt(total)}</small></label>`;
     h+=vis.map(l=>`<label class="ms-opt${cnt[l]?"":" zero"}"><input type="checkbox" value="${esc(l)}"${S.locs.includes(l)?" checked":""}><span>${esc(l)}</span><small>${fmt(cnt[l]||0)}</small></label>`).join("");
   }
   $("#loclist").innerHTML=h||'<div class="sub" style="padding:10px 6px">No location matches</div>';
+}
+function areaGroups(){
+  const g={pearl:[],lusail:[],doha:[]}; const aOf={}; for(const o of DB.list) if(o.loc) aOf[o.loc]=o.area;
+  for(const l of LOCS) if(g[aOf[l]]) g[aOf[l]].push(l);
+  return (S.area?[S.area]:["pearl","lusail","doha"]).map(a=>[a,g[a]]).filter(x=>x[1].length);
 }
 function fillTypes(){
   if(!DB) return;
@@ -735,8 +745,11 @@ function closeLoc(){ $("#locpop").hidden=true; $("#locbtn").setAttribute("aria-e
 $("#locbtn").onclick=e=>{ e.stopPropagation(); const pop=$("#locpop"); if(!pop.hidden) return closeLoc();
   pop.hidden=false; $("#locbtn").setAttribute("aria-expanded","true"); $("#locq").value=""; drawLocList(); if(matchMedia("(hover:hover)").matches) $("#locq").focus(); };
 $("#locq").oninput=drawLocList;
-$("#loclist").addEventListener("change",e=>{ const v=e.target.value; if(!v) return;
-  S.locs=e.target.checked?[...S.locs,v]:S.locs.filter(x=>x!==v); S.limit=100; locLabel(); render(); });
+$("#loclist").addEventListener("change",e=>{
+  if(e.target.dataset.area){ const ls=(areaGroups().find(([a])=>a===e.target.dataset.area)||[0,[]])[1];
+    S.locs=e.target.checked?[...new Set([...S.locs,...ls])]:S.locs.filter(x=>!ls.includes(x)); S.limit=100; locLabel(); drawLocList(); render(); return; }
+  const v=e.target.value; if(!v) return;
+  S.locs=e.target.checked?[...S.locs,v]:S.locs.filter(x=>x!==v); S.limit=100; locLabel(); drawLocList(); render(); });
 $("#locclear").onclick=()=>{ S.locs=[]; locLabel(); drawLocList(); render(); };
 $("#locdone").onclick=closeLoc;
 document.addEventListener("click",e=>{ if(!$("#locms").contains(e.target)) closeLoc(); });
