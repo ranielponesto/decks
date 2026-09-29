@@ -1856,6 +1856,59 @@ function updateFab(){
     el.classList.toggle('has-notes', k>0); if(k) el.dataset.n=k; else el.removeAttribute('data-n');
   });
 }
+/* ---------- feedback store ----------
+   When FEEDBACK_STORE.token is set, every note is written to the private GitHub repo as its own
+   file: feedbacks/<project>/<creative>/<timestamp>-<id>.json — one file per note, so reviewers never
+   overwrite each other, and every device sees the same list. With no token it falls back to this
+   browser's localStorage, as before. The token is scoped to the feedback repo only (Contents). */
+const FEEDBACK_STORE = { repo:'ranielponesto/decks-feedback', branch:'main', token:'' };
+const _fbOnline = ()=> !!(FEEDBACK_STORE.token && FEEDBACK_STORE.repo);
+const _fbProject = ()=> (CAMPAIGN.handle||CAMPAIGN.project||'project').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+const _fbCache = {};
+async function _gh(path, opt={}){
+  const r = await fetch('https://api.github.com/repos/'+FEEDBACK_STORE.repo+'/contents/'+path, Object.assign({headers:{
+    'Authorization':'Bearer '+FEEDBACK_STORE.token, 'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'}}, opt));
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error('GitHub '+r.status);
+  return r.json();
+}
+const _b64u = s => btoa(unescape(encodeURIComponent(s)));
+const _u64b = s => decodeURIComponent(escape(atob(s.replace(/\n/g,''))));
+function _fbStamp(){ return new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
+async function fbList(cid, fresh){
+  if(!_fbOnline()){ return (notesLoad()[cid]||[]).map((n,i)=>Object.assign({_local:i}, n)); }
+  if(!fresh && _fbCache[cid]) return _fbCache[cid];
+  const dir = 'feedbacks/'+_fbProject()+'/'+cid;
+  const files = (await _gh(dir+'?ref='+FEEDBACK_STORE.branch)) || [];
+  const notes = await Promise.all(files.filter(f=>f.type==='file'&&f.name.endsWith('.json')).map(async f=>{
+    try{ const j = await _gh(f.path+'?ref='+FEEDBACK_STORE.branch); const n = JSON.parse(_u64b(j.content)); n._path=f.path; n._sha=f.sha; return n; }catch(e){ return null; }
+  }));
+  return (_fbCache[cid] = notes.filter(Boolean).sort((a,b)=>String(a.iso).localeCompare(String(b.iso))));
+}
+async function fbAdd(c, text){
+  const note = {text, by:reviewer(), at:_fbStamp(), iso:new Date().toISOString(), creative:c.id, name:c.name||'', project:_fbProject(), page:location.pathname.split('/').pop()||'index.html'};
+  if(!_fbOnline()){ const nn=notesLoad(); (nn[c.id]=nn[c.id]||[]).push({text:note.text,by:note.by,at:note.at}); notesSave(nn); return 'local'; }
+  const id = note.iso.replace(/[:.]/g,'-')+'-'+Math.random().toString(36).slice(2,7);
+  await _gh('feedbacks/'+_fbProject()+'/'+c.id+'/'+id+'.json', {method:'PUT', body:JSON.stringify({
+    message:`feedback: ${_fbProject()} ${c.id} by ${note.by}`, branch:FEEDBACK_STORE.branch, content:_b64u(JSON.stringify(note,null,1))})});
+  delete _fbCache[c.id]; return 'online';
+}
+async function fbDelete(cid, n){
+  if(!_fbOnline()){ const nn=notesLoad(); (nn[cid]||[]).splice(n._local,1); if(nn[cid]&&!nn[cid].length) delete nn[cid]; notesSave(nn); return; }
+  await _gh(n._path, {method:'DELETE', body:JSON.stringify({message:`feedback removed: ${cid}`, sha:n._sha, branch:FEEDBACK_STORE.branch})});
+  delete _fbCache[cid];
+}
+function _fbNotesHTML(arr){
+  return arr.map((n,i)=>`<div class="note">
+      <div class="who"><span>${esc(n.by)} · ${esc(n.at)}</span><button class="del" data-i="${i}">delete</button></div>
+      <div dir="auto">${esc(n.text)}</div></div>`).join('');
+}
+function _fbWire(list, cid, arr, render){
+  list.querySelectorAll('.del').forEach(b=>b.addEventListener('click', async ()=>{
+    try{ await fbDelete(cid, arr[+b.dataset.i]); render(true); }catch(e){ toast('Could not delete — check connection'); }
+  }));
+}
+
 function feedbackSection(c){
   const sec = el(`<div class="fbsec">
     <div class="fb-h">Feedback <b class="n"></b><button class="ui fb-share" title="Share this creative">Share ↗</button></div>
@@ -1866,29 +1919,23 @@ function feedbackSection(c){
     </div>
   </div>`);
   const list = sec.querySelector('.list');
-  function render(){
-    const arr = notesLoad()[c.id]||[];
+  async function render(fresh){
+    let arr=[]; try{ arr = await fbList(c.id, fresh); }catch(e){ list.innerHTML='<div class="sub" style="padding:6px 0">Feedback is offline right now.</div>'; return; }
     sec.querySelector('.n').textContent = arr.length ? '· '+arr.length : '';
-    list.innerHTML = arr.map((n,i)=>`<div class="note">
-      <div class="who"><span>${esc(n.by)} · ${esc(n.at)}</span><button class="del" data-i="${i}">delete</button></div>
-      <div dir="auto">${esc(n.text)}</div></div>`).join('');
-    list.querySelectorAll('.del').forEach(b=>b.addEventListener('click', ()=>{
-      const nn=notesLoad(); nn[c.id].splice(+b.dataset.i,1); if(!nn[c.id].length) delete nn[c.id];
-      notesSave(nn); render();
-    }));
+    list.innerHTML = _fbNotesHTML(arr); _fbWire(list, c.id, arr, render);
   }
   render();
   sec.querySelector('.fb-share')?.addEventListener('click', ()=>shareCreative(c));
-  sec.querySelector('.f-add').addEventListener('click', ()=>{
-    const ta = sec.querySelector('textarea'); const t = ta.value.trim(); if(!t) return;
-    const nn = notesLoad();
-    (nn[c.id] = nn[c.id]||[]).push({text:t, by:reviewer(), at:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})});
-    notesSave(nn); ta.value=''; render(); toast('Feedback saved on this device');
+  sec.querySelector('.f-add').addEventListener('click', async ()=>{
+    const ta = sec.querySelector('textarea'), btn = sec.querySelector('.f-add'); const t = ta.value.trim(); if(!t) return;
+    btn.disabled=true;
+    try{ const where = await fbAdd(c, t); ta.value=''; await render(true); toast(where==='online'?'Feedback saved to the shared feedback log':'Feedback saved on this device'); }
+    catch(e){ toast('Could not save — check connection and try again'); }
+    btn.disabled=false;
   });
   return sec;
 }
 function openComments(c){
-  const notes = notesLoad();
   const veil = el(`<div class="cmt-veil"><div class="cmt">
     <h3>Comments — ${esc(c.id)}</h3>
     <div class="sub">${esc(c.name)}</div>
@@ -1900,67 +1947,16 @@ function openComments(c){
     </div>
   </div></div>`);
   const list = veil.querySelector('.list');
-  function render(){
-    const arr = notesLoad()[c.id]||[];
-    list.innerHTML = arr.map((n,i)=>`<div class="note">
-      <div class="who"><span>${esc(n.by)} · ${esc(n.at)}</span><button class="del" data-i="${i}">delete</button></div>
-      <div dir="auto">${esc(n.text)}</div></div>`).join('') || '<div class="sub" style="padding:8px 0">No comments yet.</div>';
-    list.querySelectorAll('.del').forEach(b=>b.addEventListener('click', ()=>{
-      const nn=notesLoad(); nn[c.id].splice(+b.dataset.i,1); if(!nn[c.id].length) delete nn[c.id];
-      notesSave(nn); render();
-    }));
+  async function render(fresh){
+    let arr=[]; try{ arr = await fbList(c.id, fresh); }catch(e){ list.innerHTML='<div class="sub" style="padding:8px 0">Feedback is offline right now.</div>'; return; }
+    list.innerHTML = _fbNotesHTML(arr) || '<div class="sub" style="padding:8px 0">No comments yet.</div>'; _fbWire(list, c.id, arr, render);
   }
   render();
   veil.addEventListener('click', e=>{ if(e.target===veil) veil.remove(); });
   veil.querySelector('.c-close').addEventListener('click', ()=>veil.remove());
-  veil.querySelector('.c-add').addEventListener('click', ()=>{
-    const t = veil.querySelector('textarea').value.trim(); if(!t) return;
-    const nn = notesLoad();
-    (nn[c.id] = nn[c.id]||[]).push({text:t, by:reviewer(), at:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})});
-    notesSave(nn); veil.querySelector('textarea').value=''; render(); toast('Comment saved on this device');
-  });
-  document.body.appendChild(veil);
-  veil.querySelector('textarea').focus();
-}
-function feedbackText(){
-  const n = notesLoad();
-  let out = `Feedback — ${CAMPAIGN.project} creatives\n${location.href.split('#')[0]}\n`;
-  for(const cid of Object.keys(n)){
-    const c = CREATIVES.find(x=>x.id===cid);
-    out += `\n■ ${cid}${c?' — '+c.name:''}\n`;
-    for(const note of n[cid]) out += `  • ${note.text}  (${note.by}, ${note.at})\n`;
-  }
-  return out;
-}
-function openFeedback(){
-  const veil = el(`<div class="cmt-veil"><div class="cmt">
-    <h3>All feedback <span class="count">· ${noteCount()} comment${noteCount()===1?'':'s'}</span></h3>
-    <div class="sub">Collected on this device. Send them to the team:</div>
-    <div class="list"></div>
-    <div class="row">
-      <button class="ui solid f-wa">Send via WhatsApp</button>
-      <button class="ui f-copy">Copy all</button>
-      <button class="ui f-clear">Clear all</button>
-      <button class="ui c-close">Close</button>
-    </div>
-  </div></div>`);
-  const n = notesLoad();
-  veil.querySelector('.list').innerHTML = Object.keys(n).map(cid=>{
-    const c=CREATIVES.find(x=>x.id===cid);
-    return `<div class="byc">${esc(cid)}${c?' — '+esc(c.name):''}</div>` +
-      n[cid].map(x=>`<div class="note"><div class="who"><span>${esc(x.by)} · ${esc(x.at)}</span></div><div dir="auto">${esc(x.text)}</div></div>`).join('');
-  }).join('');
-  veil.addEventListener('click', e=>{ if(e.target===veil) veil.remove(); });
-  veil.querySelector('.c-close').addEventListener('click', ()=>veil.remove());
-  veil.querySelector('.f-wa').addEventListener('click', ()=>{
-    window.open('https://wa.me/?text='+encodeURIComponent(feedbackText()), '_blank');
-  });
-  veil.querySelector('.f-copy').addEventListener('click', async ()=>{
-    try{ await navigator.clipboard.writeText(feedbackText()); toast('Copied'); }
-    catch(e){ prompt('Copy the feedback:', feedbackText()); }
-  });
-  veil.querySelector('.f-clear').addEventListener('click', ()=>{
-    if(confirm('Delete all comments saved on this device?')){ notesSave({}); veil.remove(); }
+  veil.querySelector('.c-add').addEventListener('click', async ()=>{
+    const ta = veil.querySelector('textarea'); const t = ta.value.trim(); if(!t) return;
+    try{ await fbAdd(c, t); ta.value=''; render(true); }catch(e){ toast('Could not save — check connection and try again'); }
   });
   document.body.appendChild(veil);
 }
