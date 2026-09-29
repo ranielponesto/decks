@@ -618,11 +618,16 @@ const toT=v=>Math.round(1000*(Math.log(v)-Math.log(PB.min))/(Math.log(PB.max)-Ma
 const fromT=t=>nice(Math.exp(Math.log(PB.min)+t/1000*(Math.log(PB.max)-Math.log(PB.min))));
 function priceBounds(){
   if(!DB) return;
-  const pool=DB.list.filter(o=>o.price&&(!S.status||o.status===S.status)&&(!S.deal||o.deal===S.deal)&&(!S.use||o.use===S.use));
+  // bounds follow every other filter and the search, so the slider always spans the listings on screen
+  const q=S.q.trim().toLowerCase(), terms=q&&!isRef(q)?q.split(/\s+/).filter(Boolean):[];
+  const pool=DB.list.filter(o=>o.price&&pass(o,{skipPrice:true})&&terms.every(x=>o.hay.includes(x)));
   const ps=pool.map(o=>o.price).sort((a,b)=>a-b);
   PB=ps.length?{min:Math.max(1,ps[0]),max:Math.max(ps[ps.length-1],ps[0]+1)}:{min:1,max:2};
-  const key=PB.min+":"+PB.max; if(priceBounds.key&&priceBounds.key!==key){ S.pmin=null; S.pmax=null; } priceBounds.key=key;
+  PB.n=pool.length;
+  // keep the person's chosen range, but drop ends that fall outside the new bounds
   if(S.pmin!=null&&S.pmin<=PB.min) S.pmin=null; if(S.pmax!=null&&S.pmax>=PB.max) S.pmax=null;
+  if(S.pmin!=null&&S.pmin>PB.max) S.pmin=null; if(S.pmax!=null&&S.pmax<PB.min) S.pmax=null;
+  $("#rngMin").disabled=$("#rngMax").disabled=PB.n<2;
   drawRange();
 }
 function drawRange(){
@@ -631,7 +636,7 @@ function drawRange(){
   $("#rngFill").style.left=(a/10)+"%"; $("#rngFill").style.right=(100-b/10)+"%";
   const v=$("#rngVal"), on=S.pmin!=null||S.pmax!=null; v.classList.toggle("on",on);
   const unit=S.deal==="rent"?" /mo":"";
-  v.textContent=!on?`Any price (${fmt(PB.min)} to ${fmt(PB.max)})`:`${S.pmin==null?fmt(PB.min):fmt(S.pmin)} to ${S.pmax==null?fmt(PB.max):fmt(S.pmax)}${unit}`;
+  v.textContent=PB.n<2?"Price: not enough listings":!on?`Any price (${fmt(PB.min)} to ${fmt(PB.max)}${unit})`:`${S.pmin==null?fmt(PB.min):fmt(S.pmin)} to ${S.pmax==null?fmt(PB.max):fmt(S.pmax)}${unit}`;
 }
 let rngT;
 function onRange(e){
@@ -699,6 +704,7 @@ function filter(){
 /* ---------- render ---------- */
 function render(){
   if(!DB) return;
+  priceBounds();
   const {res,terms,refMode}=filter();
   $("#n").textContent=fmt(res.length);
   $("#nl").textContent=res.length===1?"listing":"listings";
