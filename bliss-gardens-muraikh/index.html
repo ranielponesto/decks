@@ -2260,6 +2260,39 @@ function feedbackText(n){
   }
   return out;
 }
+/* ---------- Excel export: builds a real .xlsx in the browser (JSZip, no server) ---------- */
+async function feedbackExcel(n){
+  const X = s => String(s==null?'':s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const col = i => String.fromCharCode(65+i);
+  const head = ['Project','Creative ID','Creative','Reviewer','Feedback','Date'];
+  const rows = [];
+  for(const cid of Object.keys(n)){
+    const c = CREATIVES.find(x=>x.id===cid);
+    for(const note of n[cid]){
+      const d = note.iso ? new Date(note.iso) : null;
+      rows.push([CAMPAIGN.project, cid, (c&&c.name)||note.name||'', note.by, note.text,
+        d && !isNaN(d) ? d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : (note.at||'')]);
+    }
+  }
+  const cell = (v,r,i,s) => `<c r="${col(i)}${r}" t="inlineStr" s="${s}"><is><t xml:space="preserve">${X(v)}</t></is></c>`;
+  let sd = `<row r="1">${head.map((h,i)=>cell(h,1,i,1)).join('')}</row>`;
+  rows.forEach((r,ri)=>{ sd += `<row r="${ri+2}">${r.map((v,i)=>cell(v,ri+2,i,i===4?2:3)).join('')}</row>`; });
+  const last = `F${rows.length+1}`;
+  const z = new JSZip();
+  z.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+  z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  z.file('xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Feedback" sheetId="1" r:id="rId1"/></sheets>'+(rows.length?`<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">Feedback!$A$1:$F$${rows.length+1}</definedName></definedNames>`:'')+'</workbook>');
+  z.file('xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+  z.file('xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0B1F3A"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="4"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"><alignment vertical="center"/></xf><xf applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf><xf applyAlignment="1"><alignment vertical="top"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+  z.file('xl/worksheets/sheet1.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="24" customWidth="1"/><col min="2" max="2" width="14" customWidth="1"/><col min="3" max="3" width="30" customWidth="1"/><col min="4" max="4" width="18" customWidth="1"/><col min="5" max="5" width="70" customWidth="1"/><col min="6" max="6" width="20" customWidth="1"/></cols><sheetData>'+sd+'</sheetData>'+(rows.length?`<autoFilter ref="A1:${last}"/>`:'')+'</worksheet>');
+  const blob = await z.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Feedback - ${CAMPAIGN.project} - ${new Date().toISOString().slice(0,10)}.xlsx`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
 async function openFeedback(){
   const veil = el(`<div class="cmt-veil"><div class="cmt">
     <h3>All feedback <span class="count"></span></h3>
@@ -2268,6 +2301,7 @@ async function openFeedback(){
     <div class="row">
       <button class="ui solid f-wa">Send via WhatsApp</button>
       <button class="ui f-copy">Copy all</button>
+      <button class="ui f-xls">Download Excel</button>
       ${_fbOnline()?'':'<button class="ui f-clear">Clear all</button>'}
       <button class="ui c-close">Close</button>
     </div>
@@ -2288,6 +2322,10 @@ async function openFeedback(){
   veil.querySelector('.f-copy').addEventListener('click', async ()=>{
     try{ await navigator.clipboard.writeText(feedbackText(n)); toast('Copied'); }
     catch(e){ prompt('Copy the feedback:', feedbackText(n)); }
+  });
+  veil.querySelector('.f-xls').addEventListener('click', async ()=>{
+    if(!Object.keys(n).length){ toast('No feedback to export yet'); return; }
+    try{ await feedbackExcel(n); }catch(e){ toast('Could not build the Excel file'); }
   });
   veil.querySelector('.f-clear')?.addEventListener('click', ()=>{
     if(confirm('Delete all comments saved on this device?')){ notesSave({}); veil.remove(); }
