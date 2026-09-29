@@ -226,40 +226,47 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   .tablebox{background:none;border:0;border-radius:0;overflow:visible;margin-top:12px}
   table{min-width:0}
   thead{display:none}
-  tbody tr.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:0 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px 12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  tbody tr.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px 9px;margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
   tbody tr.row:hover td,tbody tr.row.live td,tbody tr.row.live:hover td{background:none}
   tbody tr.row.live{box-shadow:inset 3px 0 0 var(--accent),0 1px 2px rgba(0,0,0,.04);background:var(--live)}
   tbody tr.row.live td:first-child{box-shadow:none}
   .sortby{margin-left:0}
   tbody td{padding:0;border:0;min-width:0}
   tbody td:first-child,tbody td:last-child{padding:0}
-  /* line 1: Rent/Sale, beds, type, furnishing, with the rate on the right */
-  td.c-bed{grid-column:1;grid-row:1;display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow:hidden}
-  .deal{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;flex:none;border-radius:6px;background:var(--soft);color:var(--accent);white-space:nowrap}
+  /* line 1: Rent/Sale, beds, type, furnishing, rate on the right */
+  td.c-bed{grid-column:1;grid-row:1;display:flex;align-items:center;gap:3px 4px;flex-wrap:wrap;line-height:1}
+  .deal{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border-radius:5px;background:var(--soft);color:var(--accent);white-space:nowrap;flex:none}
   .deal.sale{background:var(--accent);color:var(--accent-ink)}
-  td.c-bed .bed{display:inline-block;font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:6px;padding:3px 7px;line-height:1.2;flex:none}
-  td.c-bed .bed small{font-size:12px;margin-left:3px}
-  td.c-bed .ptype{margin:0;padding:3px 7px;font-size:12px;flex:none}
+  td.c-bed .bed{display:inline-block;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:5px;padding:2px 6px;line-height:1.2;flex:none}
+  td.c-bed .bed small{font-size:11px;margin-left:2px}
+  td.c-bed .ptype{margin:0;padding:2px 6px;font-size:11.5px;flex:none;border-radius:5px}
   td.c-furn{display:none}
-  .furn.mob{display:inline-block;padding:3px 7px;flex:none}
-  td.c-furn:empty::after{content:none}
-  td.c-rate{grid-column:2;grid-row:1;text-align:right;padding-right:0;align-self:center}
-  td.c-rate .price{font-size:16px}
+  .furn.mob{display:inline-block;padding:2px 6px;font-size:11px;flex:none;border-radius:5px}
+  td.c-rate{grid-column:2;grid-row:1;text-align:right;padding-right:0}
+  td.c-rate .price{font-size:15px}
   td.c-rate .mic{display:none}
-  /* line 2 and 3: project with unit, then community */
-  td.c-proj{grid-column:1/-1;grid-row:2;margin-top:12px}
-  td.c-proj .pname{font-size:16px;font-weight:600;letter-spacing:-.01em}
-  td.c-comm{grid-column:1/-1;grid-row:3;margin-top:4px;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
-  td.c-comm .loc1{font-size:14px;font-weight:500}
-  td.c-comm .sub{margin:0}
+  /* line 2: project with unit; line 3: community */
+  td.c-proj{grid-column:1/-1;grid-row:2;margin-top:6px}
+  td.c-proj .projline{gap:3px 6px;flex-wrap:nowrap;overflow:hidden}
+  td.c-proj .pname{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .unit{font-size:11px;padding:1px 5px;flex:none}
+  td.c-comm{grid-column:1/-1;grid-row:3;margin-top:2px;display:flex;gap:5px;align-items:baseline;flex-wrap:nowrap;overflow:hidden;white-space:nowrap}
+  td.c-comm .loc1{font-size:12.5px;font-weight:500;flex:none}
+  td.c-comm .sub{margin:0;font-size:12px;overflow:hidden;text-overflow:ellipsis}
   td.c-comm .sub::before{content:"\00b7\00a0"}
   td.c-comm .loc1.sub::before{content:none}
-  /* footer: agent left, reference and website button right */
-  td.c-agent{grid-column:1/-1;grid-row:4;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  td.c-agent .aname{font-size:13px}
-  td.c-ref{grid-column:1/-1;grid-row:5;margin-top:10px}
-  .lst{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
-  .lst .cta{padding:9px 14px}
+  /* line 4: agent left, reference and website button right */
+  td.c-agent{grid-column:1;grid-row:4;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .agent{gap:6px}
+  .av{width:20px;height:20px;font-size:9px}
+  td.c-agent .aname{font-size:12.5px}
+  td.c-ref{grid-column:2;grid-row:4;margin-top:7px;justify-self:end}
+  .lst{flex-direction:row;align-items:center;justify-content:flex-end;gap:6px}
+  .lst .st{margin-left:6px}
+  .ref{font-size:12px;padding:3px 7px}
+  .copy svg{width:12px;height:12px}
+  .lst .cta{padding:6px 7px;border-radius:7px}
+  .lst .cta .ctxt{display:none}
   .lst .st{margin-left:6px}
   .lst{flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px}
   .lst .st{margin-left:6px}
@@ -743,7 +750,7 @@ function render(){
       <td class="c-agent"><span class="agent"><span class="av" style="--h:${hue}">${esc(ini)}</span><span class="aname">${o.agent?hl(o.agent,terms):'<span class="sub">\u2014</span>'}</span></span></td>
       <td class="c-ref"><div class="lst">
         <span class="refwrap"><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
-        ${url?`<a class="cta" href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}View listing</a>`:""}
+        ${url?`<a class="cta" href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}<span class="ctxt">View listing</span></a>`:""}
       </div></td>
     </tr>`;
     const det=S.open===o.ref?`<tr class="detail"><td colspan="7"><dl class="dl">
