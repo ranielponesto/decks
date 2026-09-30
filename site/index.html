@@ -831,9 +831,9 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   const rate=r=>{ try{ const q=Math.max(.125,Math.round(r*8)/8); if(Math.abs(vid.playbackRate-q)>.01) vid.playbackRate=q; }catch(e){} };   // stepped speeds: fewer decoder resets on phones
   // autoplay, with retries for browsers that hold it back (low-power mode, background tab)
   rate(IDLE); play();
-  ['loadeddata','canplay'].forEach(ev=>vid.addEventListener(ev,()=>{ if(!leaving && vid.paused && v>0) play(); }));
+  ['loadeddata','canplay'].forEach(ev=>vid.addEventListener(ev,()=>{ if(!leaving && !window.__heroDrag && vid.paused && v>0) play(); }));
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden && !leaving && v>0) play(); });
-  ['touchstart','pointerdown','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ if(!leaving && vid.paused && v>0) play(); },{once:true,passive:true}));
+  ['touchstart','pointerdown','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ if(!leaving && !window.__heroDrag && vid.paused && v>0) play(); },{once:true,passive:true}));
   vid.addEventListener('seeked',()=>{ seeking=false; });
   setInterval(()=>{ if(seeking && !vid.seeking) seeking=false; },250);
   const lock=on=>document.documentElement.classList.toggle('hero-lock',on);
@@ -849,8 +849,8 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   (function loop(now){
     const dt=Math.min(.1,(now-last)/1000); last=now;
     if(!leaving){
-      if(MOBILE){ const recent=now-lastSwipe<1300; v=recent?(swipeDir>0?MAX:-1):IDLE; }   // phones: swipe up = rewind at 1x (stepped), swipe down = fast-forward   // phones: fast while swiping down, hold while swiping up, else normal
-      else { v=IDLE+(v-IDLE)*Math.pow(EASE,dt*60); if(Math.abs(v-IDLE)<.01) v=IDLE; }
+      if(MOBILE){ if(armed && !dragging && vid.paused && !vid.ended){ rate(1); play(); } requestAnimationFrame(loop); return; }   // phones: plain playback; the finger scrubs directly (see touch scrub below)
+      v=IDLE+(v-IDLE)*Math.pow(EASE,dt*60); if(Math.abs(v-IDLE)<.01) v=IDLE;
       if(v>=0.07){                       // forward: native playback at the current speed
         rate(v); if(vid.paused && !vid.ended && !seeking) play();
       }else{                             // backward (or near-still): scrub by seeking
@@ -889,12 +889,33 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   vid.addEventListener('timeupdate',()=>{ if(!armed && !vid.paused && vid.currentTime>0.05) arm(); });
   const block=e=>{ e.preventDefault(); e.stopPropagation(); };
   window.addEventListener('wheel',e=>{ if(!gated()) return; block(e); push(e.deltaMode===1?e.deltaY*16:e.deltaY); },{capture:true,passive:false});
-  let ty=null;
-  window.addEventListener('touchstart',e=>{ ty=e.touches[0].clientY; },{capture:true,passive:true});
-  const onMove=e=>{ if(!gated()) return; block(e); const y=e.touches[0].clientY; if(ty!==null) push((ty-y)*2.2); ty=y; };
+  /* ---- touch scrub: drag like a video scrubber. Right or up = forward, left or down = back ---- */
+  let dragging=false, sx0=0, sy0=0, t0=0, target=0, fwd=false;
+  const dur=()=>vid.duration||20;
+  const SPP=()=>dur()/(Math.max(innerWidth,innerHeight)*1.1);        // one long drag ≈ the whole clip
+  function seekTo(t){ if(seeking) return; seeking=true; lastSeek=performance.now();
+    try{ if(vid.fastSeek) vid.fastSeek(t); else vid.currentTime=t; }catch(e){ vid.currentTime=t; } }
+  window.addEventListener('touchstart',e=>{
+    if(reduce||leaving||bypass||window.scrollY>8) return;
+    if(!armed) arm();                                      // the touch itself is a user gesture: take over even if autoplay was held back
+    if(!armed) return;
+    const p=e.touches[0]; dragging=true; window.__heroDrag=true; sx0=p.clientX; sy0=p.clientY; t0=vid.currentTime; target=t0; fwd=false;
+    engaged=true; vid.pause();
+  },{capture:true,passive:true});
+  const onMove=e=>{ if(!dragging||!gated()) return; block(e);
+    const p=e.touches[0], dx=p.clientX-sx0, dy=p.clientY-sy0;
+    const d=Math.abs(dx)>Math.abs(dy)?dx:-dy;                 // dominant direction
+    target=Math.max(0,Math.min(dur()-0.05,t0+d*SPP())); fwd=d>0;
+    if(Math.abs(vid.currentTime-target)>0.04) seekTo(target);
+  };
   window.addEventListener('touchmove',onMove,{capture:true,passive:false});
-  hero.addEventListener('touchmove',onMove,{passive:false});
   document.addEventListener('touchmove',e=>{ if(gated()) e.preventDefault(); },{passive:false});
+  vid.addEventListener('seeked',()=>{ if(dragging && Math.abs(vid.currentTime-target)>0.04){ seeking=false; seekTo(target); } });
+  window.addEventListener('touchend',()=>{ if(!dragging) return; dragging=false; window.__heroDrag=false;
+    if(fwd && target>=dur()-0.4){ leave(); return; }       // dragged to the end → glide to the next section
+    rate(1); play();
+  },{capture:true,passive:true});
+  window.addEventListener('touchcancel',()=>{ if(dragging){ dragging=false; window.__heroDrag=false; rate(1); play(); } },{capture:true,passive:true});
   window.addEventListener('keydown',e=>{ if(!gated()) return;
     if(['ArrowDown','PageDown',' ','Spacebar'].includes(e.key)){ block(e); push(160); }
     else if(['ArrowUp','PageUp'].includes(e.key)){ block(e); push(-160); } },{capture:true});
