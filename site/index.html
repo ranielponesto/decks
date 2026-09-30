@@ -598,6 +598,11 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
 .hero.is-loading .cue-line{animation:none;opacity:.5}
 .hero.is-loading .cue-txt{animation:cuepulse 1.6s ease-in-out infinite}
 @keyframes cuepulse{0%,100%{opacity:.45}50%{opacity:1}}
+
+/* touches must reach the hero itself, not the <video> (iOS swallows touch events on video elements) */
+.hero .hero-slides,.hero .hero-video,.hero .hero-shade,.hero .hero-copy{pointer-events:none}
+.hero{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.hero .hero-bottom,.hero .hero-links{pointer-events:auto}
 </style>
 </head>
 <body>
@@ -837,7 +842,7 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   (function loop(now){
     const dt=Math.min(.1,(now-last)/1000); last=now;
     if(!leaving){
-      if(MOBILE){ const recent=now-lastSwipe<900; v=recent?(swipeDir>0?MAX:0):IDLE; }   // phones: fast while swiping down, hold while swiping up, else normal
+      if(MOBILE){ const recent=now-lastSwipe<1300; v=recent?(swipeDir>0?MAX:0):IDLE; }   // phones: fast while swiping down, hold while swiping up, else normal
       else { v=IDLE+(v-IDLE)*Math.pow(EASE,dt*60); if(Math.abs(v-IDLE)<.01) v=IDLE; }
       if(v>=0.07){                       // forward: native playback at the current speed
         rate(v); if(vid.paused && !vid.ended && !seeking) play();
@@ -879,7 +884,10 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   window.addEventListener('wheel',e=>{ if(!gated()) return; block(e); push(e.deltaMode===1?e.deltaY*16:e.deltaY); },{capture:true,passive:false});
   let ty=null;
   window.addEventListener('touchstart',e=>{ ty=e.touches[0].clientY; },{capture:true,passive:true});
-  window.addEventListener('touchmove',e=>{ if(!gated()) return; block(e); const y=e.touches[0].clientY; if(ty!==null) push((ty-y)*2.2); ty=y; },{capture:true,passive:false});
+  const onMove=e=>{ if(!gated()) return; block(e); const y=e.touches[0].clientY; if(ty!==null) push((ty-y)*2.2); ty=y; };
+  window.addEventListener('touchmove',onMove,{capture:true,passive:false});
+  hero.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchmove',e=>{ if(gated()) e.preventDefault(); },{passive:false});
   window.addEventListener('keydown',e=>{ if(!gated()) return;
     if(['ArrowDown','PageDown',' ','Spacebar'].includes(e.key)){ block(e); push(160); }
     else if(['ArrowUp','PageUp'].includes(e.key)){ block(e); push(-160); } },{capture:true});
