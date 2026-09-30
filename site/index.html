@@ -464,7 +464,6 @@ body.menu-open .menu{transform:translateX(0)}
   .collage{grid-template-columns:repeat(2,1fr);grid-auto-rows:34vw}
   .c-big{grid-column:span 2;grid-row:span 2}
   .c-side,.c-third{grid-column:span 1}
-  .collage button:nth-child(4){grid-column:span 2;grid-row:span 1}
 }
 .lb{position:fixed;inset:0;z-index:200;background:rgba(12,16,21,.96);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
 .lb.open{opacity:1;pointer-events:auto}
@@ -546,8 +545,8 @@ body.menu-open .menu{transform:translateX(0)}
   .cta-fixed{font-size:12px;padding-left:20px}
 }
 /* views collage: 6 tiles */
-@media (min-width:761px){.collage button:nth-child(4){grid-column:1/span 5}.collage button:nth-child(5){grid-column:1/span 5}.collage button:nth-child(6){grid-column:6/span 7;grid-row:span 2}.collage button:nth-child(7),.collage button:nth-child(8),.collage button:nth-child(9){grid-column:auto}}
-@media (max-width:760px){.collage button:nth-child(4){grid-column:span 1;grid-row:span 1}}
+
+
 
 .cta-fixed{white-space:nowrap}
 .strip{scroll-padding-inline:max(clamp(20px,4vw,60px),calc((100vw - 1440px)/2 + 60px))}
@@ -559,6 +558,27 @@ body.menu-open .menu{transform:translateX(0)}
 .nav .nav-logo{justify-self:start!important;order:0!important}
 .nav-w35{justify-self:end;display:block;width:clamp(120px,12vw,180px)}
 @media (max-width:760px){.nav-w35{width:118px}.nav .nav-logo img{width:118px}}
+
+/* views: 5-tile collage */
+.collage{grid-auto-flow:row}
+.collage .v-facade{grid-column:1/span 5;grid-row:1/span 3}
+.collage .v-night{grid-column:6/span 7;grid-row:1/span 2}
+.collage .v-balcony{grid-column:6/span 7;grid-row:3}
+.collage .v-blue{grid-column:1/span 7;grid-row:4/span 2}
+.collage .v-marina{grid-column:8/span 5;grid-row:4/span 2}
+.collage .v-facade img{object-position:40% 60%}
+@media (max-width:760px){
+  .collage .v-facade{grid-column:1/span 2;grid-row:auto/span 3}
+  .collage .v-night{grid-column:1/span 2;grid-row:auto/span 2}
+  .collage .v-balcony{grid-column:1/span 2;grid-row:auto/span 1}
+  .collage .v-blue,.collage .v-marina{grid-column:span 1;grid-row:auto/span 1}
+}
+/* project details without logo */
+.info-wrap{grid-template-columns:1fr!important}
+/* header fades out slowly at the map */
+.nav{transition:opacity 1.4s var(--ease)}
+body.nav-hide .nav{opacity:0;pointer-events:none}
+body.nav-hide .nav>*{pointer-events:none}
 </style>
 </head>
 <body>
@@ -635,7 +655,7 @@ body.menu-open .menu{transform:translateX(0)}
         <h2>Views at 35 Waterfront</h2>
         <p>Photographed from the residences — the Lusail skyline, the marina and the beach, from dawn to night.</p>
       </div>
-      <div class="collage" id="collage"><button type="button" class="c-big" data-g="views" aria-label="View photo 1 of 6"><img src="../waterfront-35/gallery/view-05.jpg" alt="View from Thirty Five Lusail Waterfront" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="c-side" data-g="views" aria-label="View photo 2 of 6"><img src="../waterfront-35/gallery/view-03.jpg" alt="View from Thirty Five Lusail Waterfront" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="c-side" data-g="views" aria-label="View photo 3 of 6"><img src="../waterfront-35/gallery/view-09.jpg" alt="View from Thirty Five Lusail Waterfront" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="c-side" data-g="views" aria-label="View photo 4 of 6"><img src="../waterfront-35/gallery/view-01.jpg" alt="View from Thirty Five Lusail Waterfront" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="c-side" data-g="views" aria-label="View photo 5 of 6"><img src="../waterfront-35/gallery/view-08.jpg" alt="View from Thirty Five Lusail Waterfront" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="c-big" data-g="views" aria-label="View photo 6 of 6"><img src="../waterfront-35/gallery/view-07.jpg" alt="View from Thirty Five Lusail Waterfront" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button></div>
+      <div class="collage" id="collage"><button type="button" class="v-facade" data-g="views" aria-label="View photo 1 of 5"><img src="views/facade.jpg" alt="Thirty Five Lusail Waterfront from the water" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="v-night" data-g="views" aria-label="View photo 2 of 5"><img src="../waterfront-35/gallery/view-05.jpg" alt="Lusail skyline at night from the residences" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="v-balcony" data-g="views" aria-label="View photo 3 of 5"><img src="views/balcony.jpg" alt="Balcony view over the beach and marina" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="v-blue" data-g="views" aria-label="View photo 4 of 5"><img src="views/blue-hour.jpg" alt="Blue hour over Lusail Waterfront" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button><button type="button" class="v-marina" data-g="views" aria-label="View photo 5 of 5"><img src="views/marina.jpg" alt="View across the marina to the West Bay skyline" loading="lazy" decoding="async" onload="this.classList.add('ok')"></button></div>
     </div>
   </section>
 
@@ -644,7 +664,7 @@ body.menu-open .menu{transform:translateX(0)}
   <!-- PROJECT DETAILS -->
   <section class="info" id="info" aria-label="Project details">
     <div class="container info-wrap">
-      <div class="info-brand"><span class="w35-logo w35-info"><img src="w35-logo.png" alt="Thirty Five Lusail Waterfront"></span></div>
+      
       <dl class="facts"><div class="fact"><dt>Property type</dt><dd>Residential Tower</dd></div><div class="fact"><dt>Status</dt><dd>Under Development</dd></div><div class="fact"><dt>Handover</dt><dd>June 2027</dd></div><div class="fact"><dt>Unit type</dt><dd>2&#8209;Bedroom Apartments</dd></div><div class="fact"><dt>Area</dt><dd>106 – 134 sqm</dd></div><div class="fact"><dt>Payment plan</dt><dd>4 years post&#8209;handover</dd></div></dl>
     </div>
   </section>
@@ -668,7 +688,7 @@ body.menu-open .menu{transform:translateX(0)}
         <div class="strip-nav"><button type="button" class="round" id="intPrev" aria-label="Previous photos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="round" id="intNext" aria-label="Next photos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6l6 6-6 6"/></svg></button></div>
       </div>
     </div>
-    <div class="strip" id="intStrip"><button type="button" class="slide" data-g="interiors" aria-label="Living room — photo 1 of 8"><img src="../waterfront-35/gallery/m1003-04.jpg" alt="Living room, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Living room</span></button><button type="button" class="slide" data-g="interiors" aria-label="Living &amp; dining — photo 2 of 8"><img src="../waterfront-35/gallery/m1003-07.jpg" alt="Living &amp; dining, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Living &amp; dining</span></button><button type="button" class="slide" data-g="interiors" aria-label="Dining — photo 3 of 8"><img src="../waterfront-35/gallery/m1003-09.jpg" alt="Dining, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Dining</span></button><button type="button" class="slide" data-g="interiors" aria-label="Kitchen — photo 4 of 8"><img src="../waterfront-35/gallery/m1003-13.jpg" alt="Kitchen, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Kitchen</span></button><button type="button" class="slide" data-g="interiors" aria-label="Master bedroom — photo 5 of 8"><img src="../waterfront-35/gallery/m1003-17.jpg" alt="Master bedroom, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Master bedroom</span></button><button type="button" class="slide" data-g="interiors" aria-label="Bedroom — photo 6 of 8"><img src="../waterfront-35/gallery/m1003-16.jpg" alt="Bedroom, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Bedroom</span></button><button type="button" class="slide" data-g="interiors" aria-label="Bathroom — photo 7 of 8"><img src="../waterfront-35/gallery/m1003-14.jpg" alt="Bathroom, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Bathroom</span></button><button type="button" class="slide" data-g="interiors" aria-label="Balcony — photo 8 of 8"><img src="../waterfront-35/gallery/m1003-23.jpg" alt="Balcony, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Balcony</span></button></div>
+    <div class="strip" id="intStrip"><button type="button" class="slide" data-g="interiors" aria-label="Living room — photo 1 of 7"><img src="../waterfront-35/gallery/m1003-04.jpg" alt="Living room, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Living room</span></button><button type="button" class="slide" data-g="interiors" aria-label="Living &amp; dining — photo 2 of 7"><img src="../waterfront-35/gallery/m1003-07.jpg" alt="Living &amp; dining, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Living &amp; dining</span></button><button type="button" class="slide" data-g="interiors" aria-label="Dining — photo 3 of 7"><img src="../waterfront-35/gallery/m1003-09.jpg" alt="Dining, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Dining</span></button><button type="button" class="slide" data-g="interiors" aria-label="Kitchen — photo 4 of 7"><img src="../waterfront-35/gallery/m1003-13.jpg" alt="Kitchen, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Kitchen</span></button><button type="button" class="slide" data-g="interiors" aria-label="Master bedroom — photo 5 of 7"><img src="../waterfront-35/gallery/m1003-17.jpg" alt="Master bedroom, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Master bedroom</span></button><button type="button" class="slide" data-g="interiors" aria-label="Bedroom — photo 6 of 7"><img src="../waterfront-35/gallery/m1003-16.jpg" alt="Bedroom, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Bedroom</span></button><button type="button" class="slide" data-g="interiors" aria-label="Bathroom — photo 7 of 7"><img src="../waterfront-35/gallery/m1003-14.jpg" alt="Bathroom, show apartment" loading="lazy" decoding="async" onload="this.classList.add('ok')"><span class="cap">Bathroom</span></button></div>
   </section>
 
   <!-- LOCATION -->
@@ -679,7 +699,7 @@ body.menu-open .menu{transform:translateX(0)}
         <a class="map-link" href="https://maps.app.goo.gl/7umwhhUwaN3ptTnVA" target="_blank" rel="noopener">Open in Google Maps<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M8 7h9v9"/></svg></a>
       </div>
       <div class="map-frame">
-        <iframe title="Thirty Five Lusail Waterfront on Google Maps" src="https://www.google.com/maps?q=Lusail+Waterfront,+Lusail,+Qatar&amp;z=15&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        <iframe title="Thirty Five Lusail Waterfront on Google Maps" src="https://www.google.com/maps?q=25.433296,51.519306&amp;z=16&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
       </div>
       <p class="map-addr">Lusail Waterfront, Lusail, Qatar</p>
     </div>
@@ -857,6 +877,12 @@ body.menu-open .menu{transform:translateX(0)}
       $('#intNext').addEventListener('click',()=>st.scrollBy({left:step(),behavior:'smooth'})); }
   })();
 
+
+
+  /* ---- header logos fade out once the map is reached ---- */
+  (function(){ const loc=$('#location'); if(!loc) return;
+    const chk=()=>{ const r=loc.getBoundingClientRect(); document.body.classList.toggle('nav-hide', r.top < window.innerHeight*0.55); };
+    window.addEventListener('scroll',chk,{passive:true}); if(window.lenis_ref) lenis_ref.on('scroll',chk); chk(); })();
 
   /* ---- GSAP scroll effects ---- */
   if(window.gsap && window.ScrollTrigger){
