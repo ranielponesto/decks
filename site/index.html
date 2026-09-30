@@ -594,6 +594,10 @@ body.nav-hide .nav>*{pointer-events:none}
 html.hero-lock,html.hero-lock body{overflow:hidden;overscroll-behavior:none}
 html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action:none}
 
+
+.hero.is-loading .cue-line{animation:none;opacity:.5}
+.hero.is-loading .cue-txt{animation:cuepulse 1.6s ease-in-out infinite}
+@keyframes cuepulse{0%,100%{opacity:.45}50%{opacity:1}}
 </style>
 </head>
 <body>
@@ -807,7 +811,9 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   const MAX=MOBILE?2:4;     // top speed either way (x normal) — capped on phones to keep 4K decoding smooth
   const GAIN=0.012;        // speed change per pixel scrolled / swiped
   const EASE=0.92;         // how fast it settles back to slow-mo (per frame)
-  let v=IDLE, engaged=false, leaving=false, seeking=false, scrubT=null, last=performance.now();
+  let v=IDLE, engaged=false, leaving=false, seeking=false, scrubT=null, last=performance.now(), armed=false, bypass=false;
+  const cue=$('#heroCue .cue-txt'); if(cue) cue.textContent='Loading';
+  hero.classList.add('is-loading');
   vid.muted=true; vid.setAttribute('muted',''); vid.playsInline=true;
   const play=()=>{ const p=vid.play(); if(p&&p.catch) p.catch(()=>{}); };
   const rate=r=>{ try{ const q=Math.max(.125,Math.round(r*8)/8); if(Math.abs(vid.playbackRate-q)>.01) vid.playbackRate=q; }catch(e){} };   // stepped speeds: fewer decoder resets on phones
@@ -857,13 +863,17 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   });
   // scrolled back to the top → hero takes over again and resumes
   window.addEventListener('scroll',()=>{
-    if(leaving && window.scrollY<4){ lock(true); leaving=false; engaged=false; v=IDLE; hero.classList.remove('is-done');
+    if(!armed && !bypass && window.scrollY>8){ bypass=true; hero.classList.remove('is-loading'); }
+    if(armed && leaving && window.scrollY<4){ lock(true); leaving=false; engaged=false; v=IDLE; hero.classList.remove('is-done');
       if(vid.ended||vid.currentTime>=vid.duration-.05) vid.currentTime=Math.max(0,vid.duration-1.5);
       play(); if(lenis) lenis.stop(); }
   },{passive:true});
-  const gated=()=>!reduce && !leaving && window.scrollY<8;
-  if(!reduce && lenis) lenis.stop();
-  if(!reduce) lock(true);
+  const gated=()=>!reduce && armed && !leaving && window.scrollY<8;
+  // the hero only takes over once the video is actually playing; until then the page scrolls normally
+  function arm(){ if(armed||bypass||reduce) return; if(window.scrollY>8){ bypass=true; hero.classList.remove('is-loading'); return; }
+    armed=true; hero.classList.remove('is-loading'); if(cue) cue.textContent='Swipe'; lock(true); if(lenis) lenis.stop(); }
+  vid.addEventListener('playing',()=>{ if(!armed) arm(); });
+  vid.addEventListener('timeupdate',()=>{ if(!armed && !vid.paused && vid.currentTime>0.05) arm(); });
   const block=e=>{ e.preventDefault(); e.stopPropagation(); };
   window.addEventListener('wheel',e=>{ if(!gated()) return; block(e); push(e.deltaMode===1?e.deltaY*16:e.deltaY); },{capture:true,passive:false});
   let ty=null;
