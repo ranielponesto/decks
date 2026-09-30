@@ -421,9 +421,17 @@ body.menu-open .menu{transform:translateX(0)}
 .hero.is-fast .hero-copy h1{opacity:1}
 
 .hero-stack{text-shadow:0 1px 18px rgba(10,16,24,.55),0 1px 3px rgba(10,16,24,.35)}
-.hero-copy::before{content:"";position:absolute;left:50%;top:50%;width:min(900px,120vw);height:min(560px,70vh);transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(16,24,34,.42),rgba(16,24,34,0));pointer-events:none}
+
 .hero-stack{position:relative}
 .hero-offer,.hero-place{opacity:1}
+
+/* hero lines: one at a time, low in the frame so the video stays clear */
+.hero-copy{align-items:flex-end;padding-bottom:calc(clamp(28px,5vh,60px) + 150px)}
+.hero .hero-copy h1.hero-lines{display:grid;width:min(760px,88vw);height:auto;font-size:clamp(20px,2.6vw,34px);font-weight:200;letter-spacing:.1em;line-height:1.18;text-transform:uppercase;text-shadow:0 1px 14px rgba(10,16,24,.5),0 1px 2px rgba(10,16,24,.3);transition:opacity .6s var(--ease)}
+.hero .hero-copy h1.hero-lines span{grid-area:1/1;position:static;left:auto;right:auto;top:auto;align-self:end;opacity:0;transform:translateY(12px);transition:opacity .9s var(--ease),transform .9s var(--ease-out);text-wrap:balance}
+.hero .hero-copy h1.hero-lines span.active{opacity:1;transform:none}
+.hero.is-fast .hero-copy h1.hero-lines{opacity:.2}
+@media (max-width:760px){.hero-copy{padding-bottom:calc(clamp(28px,5vh,60px) + 158px)}.hero .hero-copy h1.hero-lines{font-size:clamp(18px,5vw,24px);letter-spacing:.08em;width:90vw}}
 </style>
 </head>
 <body>
@@ -469,12 +477,12 @@ body.menu-open .menu{transform:translateX(0)}
   </div>
   <div class="hero-shade"></div>
   <div class="hero-copy">
-    <div class="hero-stack">
-    <h1 class="display-thin"><span class="active">Unmatched<em>sea views</em></span></h1>
-    <p class="hero-place">Prime Lusail Waterfront</p>
-    <p class="hero-offer">Freehold apartments with a 4-year post-handover payment plan</p>
-    <p class="hero-handover">Handover in June 2027</p>
-    </div>
+    <h1 class="hero-lines display-thin" id="heroLines" aria-live="off">
+      <span class="active">Unmatched sea views</span>
+      <span>Prime Lusail Waterfront</span>
+      <span>Freehold apartments with 4 years post-handover payment plan</span>
+      <span>Handover in June 2027</span>
+    </h1>
   </div>
   <div class="hero-bottom">
     <div class="hero-cue" id="heroCue" aria-hidden="true"><span class="cue-line"></span><span class="cue-txt">Swipe</span></div>
@@ -861,6 +869,10 @@ body.menu-open .menu{transform:translateX(0)}
   burger.addEventListener('click',()=>document.body.classList.contains('menu-open')?closeMenu():openMenu());
   $('#scrim').addEventListener('click',closeMenu);
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
+
+  /* ---- hero lines rotate one at a time ---- */
+  (function(){ const ls=$$('#heroLines span'); if(ls.length<2||reduce) return; let i=0;
+    setInterval(()=>{ ls[i].classList.remove('active'); i=(i+1)%ls.length; ls[i].classList.add('active'); },3400); })();
 
   /* ---- hero video: autoplays in slow-mo; scroll/swipe down fast-forwards, up rewinds; the end glides to the next section ---- */
   const hero=$('.hero'), vid=$('#heroVideo');
