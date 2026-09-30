@@ -862,55 +862,74 @@ body.menu-open .menu{transform:translateX(0)}
   $('#scrim').addEventListener('click',closeMenu);
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
 
-  /* ---- hero video: slow-mo; swiping down speeds it up; at the end, glide to the next section ---- */
-  const hero=$('.hero'), vid=$('#heroVideo'), heads=$$('.hero-copy h1 span');
-  const IDLE_RATE=0.5;     // slow motion when untouched
-  const MAX_RATE=4;        // top speed while swiping down
-  const BOOST=0.012;       // speed added per pixel of downward scroll / swipe
-  const DECAY=0.93;        // how quickly it eases back to slow-mo (per frame)
-  let rate=IDLE_RATE, engaged=false, leaving=false;
-  
-  function setRate(r){ try{ vid.playbackRate=r; }catch(e){} }
-  const tryPlay=()=>{ const p=vid.play(); if(p&&p.catch) p.catch(()=>{}); };
-  setRate(IDLE_RATE); tryPlay();
-  vid.addEventListener('playing',()=>setRate(rate));
+  /* ---- hero video: autoplays in slow-mo; scroll/swipe down fast-forwards, up rewinds; the end glides to the next section ---- */
+  const hero=$('.hero'), vid=$('#heroVideo');
+  const IDLE=0.5;          // resting speed (slow motion)
+  const MAX=4;             // top speed either way (x normal)
+  const GAIN=0.012;        // speed change per pixel scrolled / swiped
+  const EASE=0.92;         // how fast it settles back to slow-mo (per frame)
+  let v=IDLE, engaged=false, leaving=false, seeking=false, scrubT=null, last=performance.now();
+  vid.muted=true; vid.setAttribute('muted',''); vid.playsInline=true;
+  const play=()=>{ const p=vid.play(); if(p&&p.catch) p.catch(()=>{}); };
+  const rate=r=>{ try{ if(Math.abs(vid.playbackRate-r)>.01) vid.playbackRate=r; }catch(e){} };
+  // autoplay, with retries for browsers that hold it back (low-power mode, background tab)
+  rate(IDLE); play();
+  ['loadeddata','canplay'].forEach(ev=>vid.addEventListener(ev,()=>{ if(!leaving && vid.paused && v>0) play(); }));
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden && !leaving && v>0) play(); });
+  ['touchstart','pointerdown','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ if(!leaving && vid.paused && v>0) play(); },{once:true,passive:true}));
+  vid.addEventListener('seeked',()=>{ seeking=false; });
+  setInterval(()=>{ if(seeking && !vid.seeking) seeking=false; },250);
   function leave(){
-    if(leaving) return; leaving=true;
-    vid.pause(); hero.classList.remove('is-fast'); hero.classList.add('is-done');
-    const target=$('#reveal')||$('.content section');
-    const y=target ? target.getBoundingClientRect().top+window.scrollY : window.innerHeight;
+    if(leaving) return; leaving=true; vid.pause();
+    hero.classList.remove('is-fast'); hero.classList.add('is-done');
+    const t=$('#reveal')||$('.content section');
+    const y=t ? t.getBoundingClientRect().top+window.scrollY : window.innerHeight;
     if(lenis){ lenis.start(); lenis.scrollTo(y,{duration:1.6,lock:true,force:true}); } else window.scrollTo({top:y,behavior:'smooth'});
   }
-  function boost(px){
-    if(px<=0) return;               // only downward swipes speed it up
-    engaged=true;
-    rate=Math.min(MAX_RATE,rate+px*BOOST); setRate(rate);
-    if(vid.paused && !vid.ended) tryPlay();
-  }
-  (function loop(){
+  function push(px){ if(px>0) engaged=true; v=Math.max(-MAX,Math.min(MAX,v+px*GAIN)); }
+  (function loop(now){
+    const dt=Math.min(.1,(now-last)/1000); last=now;
     if(!leaving){
-      if(rate>IDLE_RATE){ rate=Math.max(IDLE_RATE,IDLE_RATE+(rate-IDLE_RATE)*DECAY); setRate(rate); }
-      hero.classList.toggle('is-fast',rate>1.2);
+      v=IDLE+(v-IDLE)*Math.pow(EASE,dt*60);
+      if(Math.abs(v-IDLE)<.01) v=IDLE;
+      if(v>=0.07){                       // forward: native playback at the current speed
+        rate(v); if(vid.paused && !vid.ended && !seeking) play();
+      }else{                             // backward (or near-still): scrub by seeking
+        if(!vid.paused) vid.pause();
+        if(v<0){
+          if(scrubT===null) scrubT=vid.currentTime;
+          scrubT=Math.max(0,scrubT+v*dt);            // target keeps moving even while a seek is in flight
+          if(!seeking && Math.abs(vid.currentTime-scrubT)>1/48){ seeking=true;
+            if(vid.fastSeek && Math.abs(vid.currentTime-scrubT)>.4) vid.fastSeek(scrubT); else vid.currentTime=scrubT; }
+          if(scrubT<=0) v=0;                          // reached the start: hold, then resume slow-mo
+        }
+      }
+      if(v>=0.07) scrubT=null;
+      hero.classList.toggle('is-fast',Math.abs(v)>1.2);
+      hero.classList.toggle('is-rewind',v<0);
     }
     requestAnimationFrame(loop);
-  })();
+  })(performance.now());
   vid.addEventListener('ended',()=>{
-    if(engaged) leave();              // reached the end by swiping → go to next section
-    else { vid.currentTime=0; tryPlay(); }   // untouched → keep looping in slow-mo
+    if(engaged) leave();
+    else { vid.currentTime=0; play(); }      // untouched: keep looping in slow-mo
   });
-  // back at the top → re-arm the hero from the start
+  // scrolled back to the top → hero takes over again and resumes
   window.addEventListener('scroll',()=>{
-    if(leaving && window.scrollY<4){ leaving=false; engaged=false; rate=IDLE_RATE; hero.classList.remove('is-done'); vid.currentTime=0; setRate(IDLE_RATE); tryPlay(); if(lenis) lenis.stop(); }
+    if(leaving && window.scrollY<4){ leaving=false; engaged=false; v=IDLE; hero.classList.remove('is-done');
+      if(vid.ended||vid.currentTime>=vid.duration-.05) vid.currentTime=Math.max(0,vid.duration-1.5);
+      play(); if(lenis) lenis.stop(); }
   },{passive:true});
   const gated=()=>!reduce && !leaving && window.scrollY<8;
   if(!reduce && lenis) lenis.stop();
   const block=e=>{ e.preventDefault(); e.stopPropagation(); };
-  window.addEventListener('wheel',e=>{ if(!gated()) return; block(e); boost(e.deltaMode===1?e.deltaY*16:e.deltaY); },{capture:true,passive:false});
+  window.addEventListener('wheel',e=>{ if(!gated()) return; block(e); push(e.deltaMode===1?e.deltaY*16:e.deltaY); },{capture:true,passive:false});
   let ty=null;
   window.addEventListener('touchstart',e=>{ ty=e.touches[0].clientY; },{capture:true,passive:true});
-  window.addEventListener('touchmove',e=>{ if(!gated()) return; block(e); const y=e.touches[0].clientY; if(ty!==null){ boost((ty-y)*2.2); } ty=y; },{capture:true,passive:false});
-  window.addEventListener('keydown',e=>{ if(!gated()) return; if(['ArrowDown','PageDown',' ','Spacebar'].includes(e.key)){ block(e); boost(160); } },{capture:true});
-  // menu / pill links skip straight past the hero
+  window.addEventListener('touchmove',e=>{ if(!gated()) return; block(e); const y=e.touches[0].clientY; if(ty!==null) push((ty-y)*2.2); ty=y; },{capture:true,passive:false});
+  window.addEventListener('keydown',e=>{ if(!gated()) return;
+    if(['ArrowDown','PageDown',' ','Spacebar'].includes(e.key)){ block(e); push(160); }
+    else if(['ArrowUp','PageUp'].includes(e.key)){ block(e); push(-160); } },{capture:true});
   $$('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{ if(gated() && a.getAttribute('href').length>1){ leaving=true; vid.pause(); hero.classList.add('is-done'); if(lenis) lenis.start(); } },{capture:true}));
   if(reduce){ vid.pause(); }
 
