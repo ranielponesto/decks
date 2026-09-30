@@ -410,6 +410,20 @@ body.menu-open .menu{transform:translateX(0)}
 .hero.is-fast .hero-copy h1{opacity:.25}
 .hero.is-done .hero-cue{opacity:0}
 @media (prefers-reduced-motion:reduce){.hero-cue .cue-line{animation:none}}
+
+.hero-stack{display:flex;flex-direction:column;align-items:center;gap:0;transition:opacity 1.1s var(--ease)}
+.hero-stack h1{height:auto}
+.hero-stack h1 span{position:static}
+.hero-place{margin-top:clamp(18px,2.6vh,30px);font-family:var(--font-display);font-weight:300;font-size:clamp(14px,1.35vw,19px);letter-spacing:.22em;text-transform:uppercase;opacity:.95}
+.hero-offer{margin-top:10px;max-width:34ch;font-family:var(--font-display);font-weight:300;font-size:clamp(15px,1.25vw,18px);line-height:1.45;opacity:.85}
+.hero-handover{margin-top:clamp(16px,2.2vh,24px);display:inline-block;padding:9px 18px;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-family:var(--font-display);font-size:clamp(12px,.95vw,14px);letter-spacing:.14em;backdrop-filter:blur(8px);background:rgba(255,255,255,.06)}
+.hero.is-fast .hero-stack{opacity:.25}
+.hero.is-fast .hero-copy h1{opacity:1}
+
+.hero-stack{text-shadow:0 1px 18px rgba(10,16,24,.55),0 1px 3px rgba(10,16,24,.35)}
+.hero-copy::before{content:"";position:absolute;left:50%;top:50%;width:min(900px,120vw);height:min(560px,70vh);transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(16,24,34,.42),rgba(16,24,34,0));pointer-events:none}
+.hero-stack{position:relative}
+.hero-offer,.hero-place{opacity:1}
 </style>
 </head>
 <body>
@@ -455,11 +469,12 @@ body.menu-open .menu{transform:translateX(0)}
   </div>
   <div class="hero-shade"></div>
   <div class="hero-copy">
-    <h1 class="display-thin">
-      <span class="active">Your real estate<em>partner.</em></span>
-      <span>Sold, leased, delivered<em>under one roof.</em></span>
-      <span>Trusted with 1,200 homes<em>and counting.</em></span>
-    </h1>
+    <div class="hero-stack">
+    <h1 class="display-thin"><span class="active">Unmatched<em>sea views</em></span></h1>
+    <p class="hero-place">Prime Lusail Waterfront</p>
+    <p class="hero-offer">Freehold apartments with a 4-year post-handover payment plan</p>
+    <p class="hero-handover">Handover in June 2027</p>
+    </div>
   </div>
   <div class="hero-bottom">
     <div class="hero-cue" id="heroCue" aria-hidden="true"><span class="cue-line"></span><span class="cue-txt">Swipe</span></div>
@@ -854,7 +869,7 @@ body.menu-open .menu{transform:translateX(0)}
   const BOOST=0.012;       // speed added per pixel of downward scroll / swipe
   const DECAY=0.93;        // how quickly it eases back to slow-mo (per frame)
   let rate=IDLE_RATE, engaged=false, leaving=false;
-  heads.forEach((h,k)=>h.classList.toggle('active',k===0));
+  
   function setRate(r){ try{ vid.playbackRate=r; }catch(e){} }
   const tryPlay=()=>{ const p=vid.play(); if(p&&p.catch) p.catch(()=>{}); };
   setRate(IDLE_RATE); tryPlay();
