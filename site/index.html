@@ -579,6 +579,13 @@ body.menu-open .menu{transform:translateX(0)}
 .nav{transition:opacity 1.4s var(--ease)}
 body.nav-hide .nav{opacity:0;pointer-events:none}
 body.nav-hide .nav>*{pointer-events:none}
+
+/* desktop / landscape: show the whole portrait video (full tower), blurred copy fills the sides */
+.hero-blur{display:none;position:absolute;inset:-6%;width:112%;height:112%;filter:blur(38px) saturate(1.1);opacity:.85}
+@media (min-aspect-ratio:4/5){
+  .hero-blur{display:block}
+  .hero-video{object-fit:contain;object-position:center center}
+}
 </style>
 </head>
 <body>
@@ -625,6 +632,7 @@ body.nav-hide .nav>*{pointer-events:none}
 <!-- HERO -->
 <section class="hero" id="top" aria-label="Introduction">
   <div class="hero-slides">
+    <canvas class="hero-blur" id="heroBlur" width="54" height="96" aria-hidden="true"></canvas>
     <video class="hero-video" id="heroVideo" src="hero.mp4?v=20260930c" poster="hero-poster.jpg" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
   </div>
   <div class="hero-shade"></div>
@@ -883,6 +891,11 @@ body.nav-hide .nav>*{pointer-events:none}
   (function(){ const loc=$('#location'); if(!loc) return;
     const chk=()=>{ const r=loc.getBoundingClientRect(); document.body.classList.toggle('nav-hide', r.top < window.innerHeight*0.55); };
     window.addEventListener('scroll',chk,{passive:true}); if(window.lenis_ref) lenis_ref.on('scroll',chk); chk(); })();
+
+
+  /* ---- blurred backdrop for landscape screens ---- */
+  (function(){ const c=$('#heroBlur'), v=$('#heroVideo'); if(!c||!v) return; const x=c.getContext('2d'); const mq=matchMedia('(min-aspect-ratio:4/5)');
+    let last=0; (function draw(t){ if(mq.matches && v.readyState>=2 && t-last>40){ try{ x.drawImage(v,0,0,c.width,c.height); }catch(e){} last=t; } requestAnimationFrame(draw); })(0); })();
 
   /* ---- GSAP scroll effects ---- */
   if(window.gsap && window.ScrollTrigger){
