@@ -599,6 +599,21 @@ body.nav-hide .nav>*{pointer-events:none}
 /* while the hero is in charge the browser itself may not scroll (Chrome on iPhone was jumping straight down) */
 html.hero-lock,html.hero-lock body{overflow:hidden;overscroll-behavior:none}
 html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action:none}
+
+/* ---------- desktop / landscape hero: split layout ---------- */
+@media (min-aspect-ratio:1/1){
+  .hero{background:var(--blue)}
+  .hero .hero-blur{display:block;opacity:.32;filter:blur(60px) saturate(1.05)}
+  .hero .hero-slides{left:auto;right:0;width:min(75vh,58vw);}
+  .hero .hero-video{object-fit:cover;object-position:center 45%}
+  .hero .hero-slides::before{content:"";position:absolute;inset:0 auto 0 0;width:28%;z-index:1;background:linear-gradient(to right,var(--blue),rgba(22,29,37,0));pointer-events:none}
+  .hero .hero-shade{background:linear-gradient(to right,rgba(22,29,37,.55) 0%,rgba(22,29,37,.15) 55%,rgba(22,29,37,.05) 100%),linear-gradient(to top,rgba(22,29,37,.75) 0%,rgba(22,29,37,0) 35%)}
+  .hero .hero-copy{right:min(75vh,58vw);justify-content:flex-start;text-align:left;padding:0 clamp(40px,6vw,110px);align-items:center}
+  .hero .hero-copy h1.hero-lines{width:100%;max-width:760px;font-size:clamp(34px,4vw,64px);line-height:1.08}
+  .hero .hero-copy h1.hero-lines span{justify-self:start;align-self:center}
+  .hero .hero-bottom{left:0;right:auto;width:calc(100% - min(75vh,58vw));align-items:flex-start;padding:0 clamp(40px,6vw,110px);bottom:calc(env(safe-area-inset-bottom,0px) + 104px)}
+  .cta-fixed{left:clamp(40px,6vw,110px);transform:none}
+}
 </style>
 </head>
 <body>
@@ -646,7 +661,8 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
 <section class="hero" id="top" aria-label="Introduction">
   <div class="hero-slides">
     <canvas class="hero-blur" id="heroBlur" width="54" height="96" aria-hidden="true"></canvas>
-    <video class="hero-video" id="heroVideo" src="hero.mp4?v=20260930c" poster="hero-poster.jpg" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
+    <video class="hero-video" id="heroVideo" poster="hero-poster.jpg" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
+    <script>(function(){var v=document.getElementById('heroVideo');var m=matchMedia('(pointer:coarse)').matches||matchMedia('(max-width:1024px)').matches;v.src=m?'hero-mobile.mp4?v=20260930':'hero.mp4?v=20260930c';})();</script>
   </div>
   <div class="hero-shade"></div>
   <div class="hero-copy">
