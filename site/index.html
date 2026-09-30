@@ -837,12 +837,12 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
     const y=t ? t.getBoundingClientRect().top+window.scrollY : window.innerHeight;
     if(lenis){ lenis.start(); lenis.scrollTo(y,{duration:1.6,lock:true,force:true}); } else window.scrollTo({top:y,behavior:'smooth'});
   }
-  let lastSwipe=0, swipeDir=0;
+  let lastSwipe=0, swipeDir=0, lastSeek=0;
   function push(px){ if(px>0) engaged=true; lastSwipe=performance.now(); swipeDir=px>0?1:-1; if(!MOBILE) v=Math.max(-MAX,Math.min(MAX,v+px*GAIN)); }   // phones: swiping up slows to a hold instead of rewinding (rewind = heavy seeking)
   (function loop(now){
     const dt=Math.min(.1,(now-last)/1000); last=now;
     if(!leaving){
-      if(MOBILE){ const recent=now-lastSwipe<1300; v=recent?(swipeDir>0?MAX:0):IDLE; }   // phones: fast while swiping down, hold while swiping up, else normal
+      if(MOBILE){ const recent=now-lastSwipe<1300; v=recent?(swipeDir>0?MAX:-1):IDLE; }   // phones: swipe up = rewind at 1x (stepped), swipe down = fast-forward   // phones: fast while swiping down, hold while swiping up, else normal
       else { v=IDLE+(v-IDLE)*Math.pow(EASE,dt*60); if(Math.abs(v-IDLE)<.01) v=IDLE; }
       if(v>=0.07){                       // forward: native playback at the current speed
         rate(v); if(vid.paused && !vid.ended && !seeking) play();
@@ -851,8 +851,8 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
         if(v<0){
           if(scrubT===null) scrubT=vid.currentTime;
           scrubT=Math.max(0,scrubT+v*dt);            // target keeps moving even while a seek is in flight
-          if(!seeking && Math.abs(vid.currentTime-scrubT)>(MOBILE?1/8:1/48)){ seeking=true;
-            if(vid.fastSeek && Math.abs(vid.currentTime-scrubT)>.4) vid.fastSeek(scrubT); else vid.currentTime=scrubT; }
+          if(!seeking && Math.abs(vid.currentTime-scrubT)>(MOBILE?0.35:1/48) && now-lastSeek>(MOBILE?350:0)){ seeking=true; lastSeek=now;
+            if(!MOBILE && vid.fastSeek && Math.abs(vid.currentTime-scrubT)>.4) vid.fastSeek(scrubT); else vid.currentTime=scrubT; }
           if(scrubT<=0) v=0;                          // reached the start: hold, then resume slow-mo
         }
       }
