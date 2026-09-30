@@ -580,12 +580,6 @@ body.menu-open .menu{transform:translateX(0)}
 body.nav-hide .nav{opacity:0;pointer-events:none}
 body.nav-hide .nav>*{pointer-events:none}
 
-/* desktop / landscape: show the whole portrait video (full tower), blurred copy fills the sides */
-.hero-blur{display:none;position:absolute;inset:-6%;width:112%;height:112%;filter:blur(38px) saturate(1.1);opacity:.85}
-@media (min-aspect-ratio:4/5){
-  .hero-blur{display:block}
-  .hero-video{object-fit:contain;object-position:center center}
-}
 
 .hero-skip{display:flex;flex-direction:column;align-items:center;gap:8px;color:#fff;background:none;border:0;cursor:pointer;font-family:var(--font-display);font-size:12px;letter-spacing:.18em;pointer-events:auto}
 .hero-skip .skip-ring{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;background:rgba(22,29,37,.25);transition:background .3s,transform .3s}
@@ -600,20 +594,6 @@ body.nav-hide .nav>*{pointer-events:none}
 html.hero-lock,html.hero-lock body{overflow:hidden;overscroll-behavior:none}
 html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action:none}
 
-/* ---------- desktop / landscape hero: split layout ---------- */
-@media (min-aspect-ratio:1/1){
-  .hero{background:var(--blue)}
-  .hero .hero-blur{display:block;opacity:.32;filter:blur(60px) saturate(1.05)}
-  .hero .hero-slides{left:auto;right:0;width:min(75vh,58vw);}
-  .hero .hero-video{object-fit:cover;object-position:center 45%}
-  .hero .hero-slides::before{content:"";position:absolute;inset:0 auto 0 0;width:28%;z-index:1;background:linear-gradient(to right,var(--blue),rgba(22,29,37,0));pointer-events:none}
-  .hero .hero-shade{background:linear-gradient(to right,rgba(22,29,37,.55) 0%,rgba(22,29,37,.15) 55%,rgba(22,29,37,.05) 100%),linear-gradient(to top,rgba(22,29,37,.75) 0%,rgba(22,29,37,0) 35%)}
-  .hero .hero-copy{right:min(75vh,58vw);justify-content:flex-start;text-align:left;padding:0 clamp(40px,6vw,110px);align-items:center}
-  .hero .hero-copy h1.hero-lines{width:100%;max-width:760px;font-size:clamp(34px,4vw,64px);line-height:1.08}
-  .hero .hero-copy h1.hero-lines span{justify-self:start;align-self:center}
-  .hero .hero-bottom{left:0;right:auto;width:calc(100% - min(75vh,58vw));align-items:flex-start;padding:0 clamp(40px,6vw,110px);bottom:calc(env(safe-area-inset-bottom,0px) + 104px)}
-  .cta-fixed{left:clamp(40px,6vw,110px);transform:none}
-}
 </style>
 </head>
 <body>
@@ -660,9 +640,8 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
 <!-- HERO -->
 <section class="hero" id="top" aria-label="Introduction">
   <div class="hero-slides">
-    <canvas class="hero-blur" id="heroBlur" width="54" height="96" aria-hidden="true"></canvas>
     <video class="hero-video" id="heroVideo" poster="hero-poster.jpg" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
-    <script>(function(){var v=document.getElementById('heroVideo');var m=matchMedia('(pointer:coarse)').matches||matchMedia('(max-width:1024px)').matches;v.src=m?'hero-mobile.mp4?v=20260930':'hero.mp4?v=20260930c';})();</script>
+    <script>(function(){var v=document.getElementById('heroVideo');var m=matchMedia('(pointer:coarse)').matches||matchMedia('(max-width:1024px)').matches;v.src='hero-mobile.mp4?v=20260930';})();</script>
   </div>
   <div class="hero-shade"></div>
   <div class="hero-copy">
@@ -926,9 +905,7 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
     window.addEventListener('scroll',chk,{passive:true}); if(window.lenis_ref) lenis_ref.on('scroll',chk); chk(); })();
 
 
-  /* ---- blurred backdrop for landscape screens ---- */
-  (function(){ const c=$('#heroBlur'), v=$('#heroVideo'); if(!c||!v) return; const x=c.getContext('2d'); const mq=matchMedia('(min-aspect-ratio:4/5)');
-    let last=0; (function draw(t){ if(mq.matches && v.readyState>=2 && t-last>40){ try{ x.drawImage(v,0,0,c.width,c.height); }catch(e){} last=t; } requestAnimationFrame(draw); })(0); })();
+
 
 
   (function(){ const b=$('#heroSkip'); if(b) b.addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); window.heroSkip&&heroSkip(); }); })();
