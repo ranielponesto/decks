@@ -432,6 +432,15 @@ body.menu-open .menu{transform:translateX(0)}
 .hero .hero-copy h1.hero-lines span.active{opacity:1;transform:none}
 .hero.is-fast .hero-copy h1.hero-lines{opacity:.2}
 @media (max-width:760px){.hero-copy{padding-bottom:calc(clamp(28px,5vh,60px) + 158px)}.hero .hero-copy h1.hero-lines{font-size:clamp(18px,5vw,24px);letter-spacing:.08em;width:90vw}}
+
+/* hero lines centred, large, like the reference */
+.hero .hero-copy{align-items:center;padding-bottom:0}
+.hero .hero-copy h1.hero-lines{width:min(1100px,90vw);font-size:clamp(30px,4.4vw,68px);font-weight:200;letter-spacing:.08em;line-height:1.08;text-shadow:0 1px 20px rgba(10,16,24,.35)}
+.hero .hero-copy h1.hero-lines span{align-self:center}
+@media (max-width:760px){.hero .hero-copy{padding-bottom:0}.hero .hero-copy h1.hero-lines{font-size:clamp(26px,7.6vw,36px);letter-spacing:.06em;width:90vw}}
+
+.hero .hero-copy h1.hero-lines span{transition:opacity .6s var(--ease),transform .6s var(--ease-out)}
+.hero .hero-copy h1.hero-lines span.active{transition-delay:.55s}
 </style>
 </head>
 <body>
