@@ -399,7 +399,7 @@ body.menu-open .menu{transform:translateX(0)}
   .frame img{transform:none}
 }
 
-.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%}
+.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 50%}
 .hero-copy h1{transition:opacity 1.1s var(--ease),transform 1.1s var(--ease-out)}
 .hero.is-ending .hero-copy h1{opacity:0;transform:translateY(-14px)}
 .hero.is-ending .hero-shade{opacity:.55}
@@ -407,7 +407,8 @@ body.menu-open .menu{transform:translateX(0)}
 .hero-cue{display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--font-display);font-size:12px;letter-spacing:.18em;opacity:.8;transition:opacity .6s}
 .hero-cue .cue-line{width:1px;height:38px;background:linear-gradient(to bottom,rgba(255,255,255,0),#fff);animation:cue 2.2s var(--ease) infinite;transform-origin:top}
 @keyframes cue{0%{transform:scaleY(0)}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
-.hero.is-ending .hero-cue{opacity:0}
+.hero.is-fast .hero-copy h1{opacity:.25}
+.hero.is-done .hero-cue{opacity:0}
 @media (prefers-reduced-motion:reduce){.hero-cue .cue-line{animation:none}}
 </style>
 </head>
@@ -450,7 +451,7 @@ body.menu-open .menu{transform:translateX(0)}
 <!-- HERO -->
 <section class="hero" id="top" aria-label="Introduction">
   <div class="hero-slides">
-    <video class="hero-video" id="heroVideo" src="hero.mp4?v=20260930" poster="hero-poster.jpg" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
+    <video class="hero-video" id="heroVideo" src="hero.mp4?v=20260930b" poster="hero-poster.jpg" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
   </div>
   <div class="hero-shade"></div>
   <div class="hero-copy">
@@ -461,7 +462,7 @@ body.menu-open .menu{transform:translateX(0)}
     </h1>
   </div>
   <div class="hero-bottom">
-    <div class="hero-cue" id="heroCue" aria-hidden="true"><span class="cue-line"></span><span class="cue-txt">Scroll</span></div>
+    <div class="hero-cue" id="heroCue" aria-hidden="true"><span class="cue-line"></span><span class="cue-txt">Swipe</span></div>
     <div class="hero-links">
       <a class="pill" href="#services"><span>Explore our services</span><span class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span></a>
     </div>
@@ -846,51 +847,57 @@ body.menu-open .menu{transform:translateX(0)}
   $('#scrim').addEventListener('click',closeMenu);
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
 
-  /* ---- hero video: slow-mo loop, first swipe jumps to the final 3 s ---- */
+  /* ---- hero video: slow-mo; swiping down speeds it up; at the end, glide to the next section ---- */
   const hero=$('.hero'), vid=$('#heroVideo'), heads=$$('.hero-copy h1 span');
-  const IDLE_RATE=0.5;      // slow motion while waiting
-  const END_RATE=1.0;       // speed of the final 3 s after the swipe
-  const TAIL=3;             // seconds before the end to jump to
-  let state='idle', tailStart=null;
+  const IDLE_RATE=0.5;     // slow motion when untouched
+  const MAX_RATE=4;        // top speed while swiping down
+  const BOOST=0.012;       // speed added per pixel of downward scroll / swipe
+  const DECAY=0.93;        // how quickly it eases back to slow-mo (per frame)
+  let rate=IDLE_RATE, engaged=false, leaving=false;
   heads.forEach((h,k)=>h.classList.toggle('active',k===0));
-  function setRate(r){ try{ vid.defaultPlaybackRate=r; vid.playbackRate=r; }catch(e){} }
-  function ready(){ tailStart=Math.max(0,(vid.duration||10)-TAIL); }
-  vid.addEventListener('loadedmetadata',ready); if(vid.readyState>=1) ready();
-  vid.addEventListener('playing',()=>{ if(state==='idle') setRate(IDLE_RATE); });
-  setRate(IDLE_RATE);
+  function setRate(r){ try{ vid.playbackRate=r; }catch(e){} }
   const tryPlay=()=>{ const p=vid.play(); if(p&&p.catch) p.catch(()=>{}); };
-  tryPlay();
-  // loop the part before the tail while idle
+  setRate(IDLE_RATE); tryPlay();
+  vid.addEventListener('playing',()=>setRate(rate));
+  function leave(){
+    if(leaving) return; leaving=true;
+    vid.pause(); hero.classList.remove('is-fast'); hero.classList.add('is-done');
+    const target=$('#reveal')||$('.content section');
+    const y=target ? target.getBoundingClientRect().top+window.scrollY : window.innerHeight;
+    if(lenis){ lenis.start(); lenis.scrollTo(y,{duration:1.6,lock:true,force:true}); } else window.scrollTo({top:y,behavior:'smooth'});
+  }
+  function boost(px){
+    if(px<=0) return;               // only downward swipes speed it up
+    engaged=true;
+    rate=Math.min(MAX_RATE,rate+px*BOOST); setRate(rate);
+    if(vid.paused && !vid.ended) tryPlay();
+  }
   (function loop(){
-    if(state==='idle' && tailStart!==null && vid.currentTime>=tailStart-0.05){ vid.currentTime=0; tryPlay(); }
-    if(state!=='done') requestAnimationFrame(loop);
+    if(!leaving){
+      if(rate>IDLE_RATE){ rate=Math.max(IDLE_RATE,IDLE_RATE+(rate-IDLE_RATE)*DECAY); setRate(rate); }
+      hero.classList.toggle('is-fast',rate>1.2);
+    }
+    requestAnimationFrame(loop);
   })();
-  function finish(){
-    if(state==='done') return; state='done';
-    vid.pause(); if(vid.duration) vid.currentTime=Math.max(0,vid.duration-0.04);
-    heads.forEach((h,k)=>h.classList.toggle('active',k===1));
-    hero.classList.remove('is-ending'); hero.classList.add('is-done');
-    if(lenis) lenis.start();
-  }
-  function playTail(){
-    if(state!=='idle') return; state='ending';
-    if(lenis) lenis.stop();
-    hero.classList.add('is-ending');
-    if(tailStart===null) ready();
-    vid.currentTime=tailStart; setRate(END_RATE); tryPlay();
-    setTimeout(finish,(TAIL/END_RATE)*1000+1800);   // safety net
-  }
-  vid.addEventListener('ended',()=>{ if(state==='ending') finish(); });
-  const gated=()=>!reduce && state!=='done' && window.scrollY<8;
+  vid.addEventListener('ended',()=>{
+    if(engaged) leave();              // reached the end by swiping → go to next section
+    else { vid.currentTime=0; tryPlay(); }   // untouched → keep looping in slow-mo
+  });
+  // back at the top → re-arm the hero from the start
+  window.addEventListener('scroll',()=>{
+    if(leaving && window.scrollY<4){ leaving=false; engaged=false; rate=IDLE_RATE; hero.classList.remove('is-done'); vid.currentTime=0; setRate(IDLE_RATE); tryPlay(); if(lenis) lenis.stop(); }
+  },{passive:true});
+  const gated=()=>!reduce && !leaving && window.scrollY<8;
+  if(!reduce && lenis) lenis.stop();
   const block=e=>{ e.preventDefault(); e.stopPropagation(); };
-  window.addEventListener('wheel',e=>{ if(!gated()) return; block(e); if(e.deltaY>4) playTail(); },{capture:true,passive:false});
+  window.addEventListener('wheel',e=>{ if(!gated()) return; block(e); boost(e.deltaMode===1?e.deltaY*16:e.deltaY); },{capture:true,passive:false});
   let ty=null;
   window.addEventListener('touchstart',e=>{ ty=e.touches[0].clientY; },{capture:true,passive:true});
-  window.addEventListener('touchmove',e=>{ if(!gated()) return; block(e); if(ty!==null && ty-e.touches[0].clientY>24){ ty=null; playTail(); } },{capture:true,passive:false});
-  window.addEventListener('keydown',e=>{ if(!gated()) return; if(['ArrowDown','PageDown',' ','Spacebar'].includes(e.key)){ block(e); playTail(); } },{capture:true});
-  // nav / pill links also trigger the ending first
-  $$('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{ if(gated() && a.getAttribute('href').length>1){ e.preventDefault(); e.stopImmediatePropagation(); playTail(); } },{capture:true}));
-  if(reduce){ vid.pause(); state='done'; }
+  window.addEventListener('touchmove',e=>{ if(!gated()) return; block(e); const y=e.touches[0].clientY; if(ty!==null){ boost((ty-y)*2.2); } ty=y; },{capture:true,passive:false});
+  window.addEventListener('keydown',e=>{ if(!gated()) return; if(['ArrowDown','PageDown',' ','Spacebar'].includes(e.key)){ block(e); boost(160); } },{capture:true});
+  // menu / pill links skip straight past the hero
+  $$('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{ if(gated() && a.getAttribute('href').length>1){ leaving=true; vid.pause(); hero.classList.add('is-done'); if(lenis) lenis.start(); } },{capture:true}));
+  if(reduce){ vid.pause(); }
 
   /* ---- GSAP scroll effects ---- */
   if(window.gsap && window.ScrollTrigger){
