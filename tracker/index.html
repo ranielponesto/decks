@@ -138,6 +138,8 @@ td.c-furn:empty::after{content:"\2014";color:var(--muted)}
 .furn.SF{background:var(--soft);border-color:var(--accent);color:var(--accent)}
 .lst{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .lst .st{font-size:11.5px}
+.cnum{font-size:11px;margin-left:5px;opacity:.65;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"] .cnum{opacity:.85}
 .ms{position:relative}
 .ms-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;font-size:13px;cursor:pointer;min-width:170px;max-width:260px;color:var(--ink)}
 .ms-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -211,6 +213,7 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   .filters > .deal-g{order:1}
   .filters > .beds-g{order:2}
   .filters > .area{order:3}
+  .filters > .depts-g{order:3}
   .ftoggle{display:inline-flex;order:4}
   .sortby{order:5;margin-left:auto}
   .filters > .beds-g > span,.filters > .area > span{min-width:38px}
@@ -384,6 +387,7 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="area" data-v="lusail" aria-pressed="false">Lusail</button>
         <button class="chip" data-f="area" data-v="doha" aria-pressed="false">Doha</button>
       </div>
+      <div class="group keep depts-g" role="group" aria-label="Department" id="depts" hidden></div>
       <div class="group" role="group" aria-label="Property type" id="types"></div>
       <div class="group keep beds-g" role="group" aria-label="Bedrooms">
         <span>Beds</span>
@@ -546,7 +550,11 @@ function guessType(o){
 const TYPE_ORDER=["Apartment","Villa","Townhouse","Penthouse","Duplex","Hotel apartment","Office","Retail","Showroom","Warehouse","Land"];
 const pkey=s=>String(s||"").replace(/\s+/g," ").trim().toLowerCase();
 let DEPTS={};
-function deptShort(d){ if(/tenant commercial/i.test(d)) return "Commercial"; return d.replace(/\s+agents?$/i,"").replace(/\s*-\s*general enquiry$/i," enquiry").trim(); }
+function deptShort0(d){ if(/tenant commercial/i.test(d)) return "Commercial"; return d.replace(/\s+agents?$/i,"").replace(/\s*-\s*general enquiry$/i," enquiry").trim(); }
+let DLAB={};
+function deptLabels(){ const seen={}; const all=[...new Set(Object.values(DEPTS))]; for(const d of all){ const s=deptShort0(d).toLowerCase(); (seen[s]=seen[s]||[]).push(d); }
+  DLAB={}; for(const d of all) DLAB[d]=seen[deptShort0(d).toLowerCase()].length>1?d:deptShort0(d); }
+function deptShort(d){ return DLAB[d]||deptShort0(d); }
 /* Salesforce "Project Name / Department" report -> {project: most common department} */
 function deptsFromAoa(aoa){
   const hi=aoa.findIndex(r=>r&&r.some(c=>c&&/^department$/i.test(String(c).trim()))&&r.some(c=>c&&/project/i.test(String(c))));
@@ -557,6 +565,7 @@ function deptsFromAoa(aoa){
   const out={}; for(const p in cnt){ const c=cnt[p]; out[p]=Object.keys(c).sort((a,b)=>c[b]-c[a])[0]; } return out;
 }
 function parseTable(asOf,header,rows){
+  deptLabels();
   const ix={};for(const k in COLS){ix[k]=header.findIndex(h=>h&&COLS[k].test(String(h).trim()))}
   if(ix.ref<0) throw new Error("This file has no \u201cListings Ref No.\u201d column. Export the All Listings report from Salesforce and try again.");
   const g=(r,k)=>{const v=ix[k]>=0?r[ix[k]]:null;return v==null?"":String(v).trim()};
@@ -595,11 +604,11 @@ function fromSheetArrays(aoa){
 
 /* ---------- state ---------- */
 let DB,LOCS=[];
-const S={q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],use:"",web:"",mg:"",pmin:null,pmax:null,sort:"refN",dir:-1,limit:100,open:null};
+const S={q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],depts:[],use:"",web:"",mg:"",pmin:null,pmax:null,sort:"refN",dir:-1,limit:100,open:null};
 function load(data,source){
   DB=data;
   fillLocs();
-  fillTypes();
+  fillTypes(); fillDepts();
   priceBounds();
   $("#asof").textContent=(DB.asOf?"Salesforce export, "+DB.asOf.replace(/^as of\s*/i,"as of "):"Salesforce export")+(source==="upload"?" (loaded on this device)":"");
   render();
@@ -639,6 +648,16 @@ function areaGroups(){
   const g={pearl:[],lusail:[],doha:[]}; const aOf={}; for(const o of DB.list) if(o.loc) aOf[o.loc]=o.area;
   for(const l of LOCS) if(g[aOf[l]]) g[aOf[l]].push(l);
   return (S.area?[S.area]:["pearl","lusail","doha"]).map(a=>[a,g[a]]).filter(x=>x[1].length);
+}
+function fillDepts(){
+  if(!DB) return;
+  const cnt={}; let none=0;
+  for(const o of DB.list) if(/^avail/i.test(o.status)){ if(o.dept) cnt[o.dept]=(cnt[o.dept]||0)+1; else none++; }
+  const D=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b));
+  S.depts=S.depts.filter(x=>x==="__none"||D.includes(x));
+  const box=$("#depts"); box.hidden=!D.length; if(!D.length) return;
+  const chip=(v,l,n)=>`<button class="chip" data-dept="${esc(v)}" aria-pressed="${S.depts.includes(v)}" title="${esc(v==="__none"?"No department in Salesforce":v)}">${esc(l)}<small class="cnum">${fmt(n)}</small></button>`;
+  box.innerHTML='<span>Dept</span><button class="chip" data-dept="" aria-pressed="'+(!S.depts.length)+'">All</button>'+D.map(d=>chip(d,deptShort(d),cnt[d])).join("")+(none?chip("__none","No department",none):"");
 }
 function fillTypes(){
   if(!DB) return;
@@ -711,6 +730,7 @@ function pass(o,opt={}){
   if(S.area&&o.area!==S.area) return false;
   if(!opt.skipLoc&&S.locs.length&&!S.locs.includes(o.loc)) return false;
   if(S.types.length&&!S.types.includes(o.ptype)) return false;
+  if(S.depts.length&&!S.depts.includes(o.dept||"__none")) return false;
   if(S.bed!==""){const b=+S.bed; if(o.beds==null) return false; if(b===5?o.beds<5:o.beds!==b) return false;}
   if(!opt.skipPrice&&(S.pmin!=null||S.pmax!=null)){ if(o.price==null) return false; if(S.pmin!=null&&o.price<S.pmin) return false; if(S.pmax!=null&&o.price>S.pmax) return false; }
   return true;
@@ -752,12 +772,12 @@ function render(){
     else note.hidden=true;
   } else note.hidden=true;
   { const n=[S.status!=="Available",S.locs.length,S.use,S.types.length,S.web,S.mg,S.pmin!=null||S.pmax!=null].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
-  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.locs.length||S.use||S.web||S.mg||S.area||S.types.length||S.pmin!=null||S.pmax!=null);
+  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.locs.length||S.use||S.web||S.mg||S.area||S.types.length||S.depts.length||S.pmin!=null||S.pmax!=null);
   { const v=S.sort+":"+S.dir, sel=$("#sort"); sel.value=[...sel.options].some(o=>o.value===v)?v:"custom"; }
   document.querySelectorAll("thead th.sort").forEach(th=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k; if(!refMode&&k===S.sort) th.dataset.dir=S.dir>0?"\u2191":"\u2193"; else delete th.dataset.dir;});
   const tb=$("#tb");
   if(!res.length){
-    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.locs.length||S.area)tips.push("location"); if(S.types.length)tips.push("property type"); if(S.pmin!=null||S.pmax!=null)tips.push("price"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
+    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.locs.length||S.area)tips.push("location"); if(S.types.length)tips.push("property type"); if(S.depts.length)tips.push("department"); if(S.pmin!=null||S.pmax!=null)tips.push("price"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
     tb.innerHTML=`<tr><td colspan="7"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
     $("#more").hidden=true; syncHash(); return;
   }
@@ -837,15 +857,15 @@ function similar(t){
 function syncHash(){
   const p=new URLSearchParams();
   if(S.q)p.set("q",S.q); if(S.status!=="Available")p.set("status",S.status||"all");
-  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.locs.length)p.set("loc",S.locs.join("|")); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.mg)p.set("managed",S.mg); if(S.area)p.set("area",S.area); if(S.types.length)p.set("type",S.types.join("|")); if(S.pmin!=null)p.set("pmin",S.pmin); if(S.pmax!=null)p.set("pmax",S.pmax); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
+  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.locs.length)p.set("loc",S.locs.join("|")); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.mg)p.set("managed",S.mg); if(S.area)p.set("area",S.area); if(S.types.length)p.set("type",S.types.join("|")); if(S.depts.length)p.set("dept",S.depts.join("|")); if(S.pmin!=null)p.set("pmin",S.pmin); if(S.pmax!=null)p.set("pmax",S.pmax); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
   const h=p.toString(); try{history.replaceState(null,"",h?"#"+h:location.pathname+location.search)}catch(e){}
 }
 function readHash(){
   const p=new URLSearchParams(location.hash.slice(1));
   S.q=p.get("q")||""; const st=p.get("status"); S.status=st==null?"Available":(st==="all"?"":st);
-  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.locs=(p.get("loc")||"").split("|").filter(Boolean); S.use=p.get("use")||""; S.web=p.get("web")||""; S.mg=["1","0"].includes(p.get("managed"))?p.get("managed"):""; S.area=AREAS[p.get("area")]?p.get("area"):""; S.types=(p.get("type")||"").split("|").filter(Boolean); S.pmin=p.get("pmin")?+p.get("pmin"):null; S.pmax=p.get("pmax")?+p.get("pmax"):null;
+  S.deal=p.get("deal")||""; S.bed=p.get("bed")||""; S.locs=(p.get("loc")||"").split("|").filter(Boolean); S.use=p.get("use")||""; S.web=p.get("web")||""; S.mg=["1","0"].includes(p.get("managed"))?p.get("managed"):""; S.area=AREAS[p.get("area")]?p.get("area"):""; S.types=(p.get("type")||"").split("|").filter(Boolean); S.depts=(p.get("dept")||"").split("|").filter(Boolean); S.pmin=p.get("pmin")?+p.get("pmin"):null; S.pmax=p.get("pmax")?+p.get("pmax"):null;
   const so=(p.get("sort")||"refN:-1").split(":"); S.sort=["refN","project","beds","price","loc","agent"].includes(so[0])?so[0]:"refN"; S.dir=so[1]==="1"?1:-1;
-  $("#q").value=S.q; $("#use").value=S.use; if(DB){fillLocs();fillTypes();priceBounds();} syncChips();
+  $("#q").value=S.q; $("#use").value=S.use; if(DB){fillLocs();fillTypes();fillDepts();priceBounds();} syncChips();
 }
 function syncChips(){ document.querySelectorAll(".chip[data-f]").forEach(c=>c.setAttribute("aria-pressed",String((S[c.dataset.f]??"")===c.dataset.v))); }
 
@@ -866,11 +886,13 @@ $("#locclear").onclick=()=>{ S.locs=[]; locLabel(); drawLocList(); render(); };
 $("#locdone").onclick=closeLoc;
 document.addEventListener("click",e=>{ if(!$("#locms").contains(e.target)) closeLoc(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("#locpop").hidden){ closeLoc(); $("#locbtn").focus(); } });
+$("#depts").addEventListener("click",e=>{ const c=e.target.closest("[data-dept]"); if(!c) return; const v=c.dataset.dept;
+  S.depts=v?(S.depts.includes(v)?S.depts.filter(x=>x!==v):[...S.depts,v]):[]; S.limit=100; fillDepts(); render(); });
 $("#types").addEventListener("click",e=>{ const c=e.target.closest("[data-type]"); if(!c) return; const v=c.dataset.type;
   S.types=v?(S.types.includes(v)?S.types.filter(x=>x!==v):[...S.types,v]):[]; S.limit=100; fillTypes(); render(); });
 $("#use").onchange=e=>{S.use=e.target.value;priceBounds();S.limit=100;render()};
 $("#sort").onchange=e=>{if(e.target.value==="custom")return;const [k,d]=e.target.value.split(":");S.sort=k;S.dir=+d;S.limit=100;render()};
-$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],use:"",web:"",mg:"",pmin:null,pmax:null,limit:100,open:null});$("#q").value="";$("#use").value="";fillLocs();fillTypes();priceBounds();syncChips();render();$("#q").focus()};
+$("#reset").onclick=()=>{Object.assign(S,{q:"",status:"Available",deal:"",bed:"",area:"",locs:[],types:[],depts:[],use:"",web:"",mg:"",pmin:null,pmax:null,limit:100,open:null});$("#q").value="";$("#use").value="";fillLocs();fillTypes();fillDepts();priceBounds();syncChips();render();$("#q").focus()};
 $("#ftoggle").onclick=()=>{const f=$("#filters"),o=f.classList.toggle("open");$("#ftoggle").setAttribute("aria-expanded",String(o))};
 if(matchMedia("(max-width:760px)").matches) $("#q").placeholder="Ref, project, unit or area";
 $("#more").onclick=()=>{S.limit+=100;render()};
