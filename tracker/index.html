@@ -71,7 +71,8 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:10px
 
 /* Table */
 .tablebox{overflow-x:auto;margin:16px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
-table{width:100%;border-collapse:collapse;min-width:1000px}
+table{width:100%;border-collapse:collapse;min-width:1100px}
+td.c-dept{white-space:nowrap}
 thead th{text-align:left;font-size:12px;font-weight:500;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
 thead th.sort{cursor:pointer;user-select:none}
 thead th.sort:hover{color:var(--ink)}
@@ -127,7 +128,7 @@ td.c-agent{white-space:nowrap}
 :root[data-theme="dark"] .av{background:hsl(var(--h) 28% 26%);color:hsl(var(--h) 45% 86%)}
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .av{background:hsl(var(--h) 28% 26%);color:hsl(var(--h) 45% 86%)} }
 .aname{font-weight:500}
-.dept{display:block;width:max-content;margin:6px 0 0 37px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--accent);background:var(--soft);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.dept{display:inline-block;width:max-content;margin:0;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--accent);background:var(--soft);border-radius:999px;padding:2px 8px;white-space:nowrap}
 .dept::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:1px;opacity:.7}
 .deal{display:none}
 .mgd{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;font-size:10px;font-weight:700;background:var(--ok);color:#fff;margin-left:6px;vertical-align:2px}
@@ -233,7 +234,7 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   .tablebox{background:none;border:0;border-radius:0;overflow:visible;margin-top:12px}
   table{min-width:0}
   thead{display:none}
-  tbody tr.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px 9px;margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  tbody tr.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:0 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px 9px;margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
   tbody tr.row:hover td,tbody tr.row.live td,tbody tr.row.live:hover td{background:none}
   tbody tr.row.live{box-shadow:inset 3px 0 0 var(--accent),0 1px 2px rgba(0,0,0,.04);background:var(--live)}
   tbody tr.row.live td:first-child{box-shadow:none}
@@ -250,12 +251,12 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   td.c-bed .ptype{margin:0;padding:2px 5px;font-size:11px;flex:none;border-radius:5px}
   td.c-furn{display:none}
   .furn.mob{display:inline-block;padding:2px 5px;font-size:10.5px;flex:none;border-radius:5px}
-  td.c-rate{grid-column:2;grid-row:2;text-align:right;padding-right:0;margin-top:7px;align-self:center}
+  td.c-rate{grid-column:3;grid-row:2;text-align:right;padding-right:0;margin-top:7px;align-self:center}
   td.c-rate .price{font-size:15px}
   td.c-rate .price small{font-size:11px}
   td.c-rate .mic{display:none}
   /* line 2: project with unit; line 3: community */
-  td.c-proj{grid-column:1;grid-row:2;margin-top:7px}
+  td.c-proj{grid-column:1/3;grid-row:2;margin-top:7px}
   td.c-proj .projline{gap:3px 6px;flex-wrap:nowrap;overflow:hidden}
   td.c-proj .pname{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;display:block}
   .unit{font-size:11px;padding:1px 5px;flex:none}
@@ -267,15 +268,18 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   td.c-comm .sub::before{content:"\00b7\00a0"}
   td.c-comm .loc1.sub::before{content:none}
   /* line 4: agent left, reference and website button right */
-  td.c-agent{grid-column:1;grid-row:4;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  td.c-agent{grid-column:2;grid-row:4;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .agent{gap:6px}
   .av{width:20px;height:20px;font-size:9px}
   td.c-agent .aname{font-size:12.5px}
   td.c-agent{display:flex;align-items:center;gap:6px}
+  td.c-dept{grid-column:1;grid-row:4;margin-top:7px;align-self:center;margin-right:6px}
+  td.c-dept .sub{display:none}
+  td.c-dept:has(.sub){margin-right:0}
   td.c-agent .agent{min-width:0;overflow:hidden}
   td.c-agent .aname{overflow:hidden;text-overflow:ellipsis}
   .dept{display:inline-block;margin:0;font-size:10px;padding:2px 7px;flex:none}
-  td.c-ref{grid-column:2;grid-row:4;margin-top:7px;justify-self:end}
+  td.c-ref{grid-column:3;grid-row:4;margin-top:7px;justify-self:end}
   .lst{flex-direction:row;align-items:center;justify-content:flex-end;gap:6px}
   .lst .st{margin-left:6px}
   .ref{font-size:12px;padding:3px 7px}
@@ -387,7 +391,6 @@ body.locked{overflow:hidden}
         <button class="chip" data-f="area" data-v="lusail" aria-pressed="false">Lusail</button>
         <button class="chip" data-f="area" data-v="doha" aria-pressed="false">Doha</button>
       </div>
-      <div class="group keep depts-g" role="group" aria-label="Department" id="depts" hidden></div>
       <div class="group" role="group" aria-label="Property type" id="types"></div>
       <div class="group keep beds-g" role="group" aria-label="Bedrooms">
         <span>Beds</span>
@@ -460,6 +463,7 @@ body.locked{overflow:hidden}
         <th class="sort num" data-k="price">Rate (QAR)</th>
         <th class="sort" data-k="project">Project and unit</th>
         <th>Furnishing</th>
+        <th class="sort" data-k="dept">Department</th>
         <th class="sort" data-k="agent">Listing agent</th>
         <th class="sort" data-k="ref">Reference ID</th>
       </tr></thead>
@@ -650,7 +654,7 @@ function areaGroups(){
   return (S.area?[S.area]:["pearl","lusail","doha"]).map(a=>[a,g[a]]).filter(x=>x[1].length);
 }
 function fillDepts(){
-  if(!DB) return;
+  if(!DB||!$("#depts")) return;
   const cnt={}; let none=0;
   for(const o of DB.list) if(/^avail/i.test(o.status)){ if(o.dept) cnt[o.dept]=(cnt[o.dept]||0)+1; else none++; }
   const D=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b));
@@ -730,7 +734,6 @@ function pass(o,opt={}){
   if(S.area&&o.area!==S.area) return false;
   if(!opt.skipLoc&&S.locs.length&&!S.locs.includes(o.loc)) return false;
   if(S.types.length&&!S.types.includes(o.ptype)) return false;
-  if(S.depts.length&&!S.depts.includes(o.dept||"__none")) return false;
   if(S.bed!==""){const b=+S.bed; if(o.beds==null) return false; if(b===5?o.beds<5:o.beds!==b) return false;}
   if(!opt.skipPrice&&(S.pmin!=null||S.pmax!=null)){ if(o.price==null) return false; if(S.pmin!=null&&o.price<S.pmin) return false; if(S.pmax!=null&&o.price>S.pmax) return false; }
   return true;
@@ -772,13 +775,13 @@ function render(){
     else note.hidden=true;
   } else note.hidden=true;
   { const n=[S.status!=="Available",S.locs.length,S.use,S.types.length,S.web,S.mg,S.pmin!=null||S.pmax!=null].filter(Boolean).length; const fc=$("#fcount"); fc.hidden=!n; fc.textContent=n; }
-  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.locs.length||S.use||S.web||S.mg||S.area||S.types.length||S.depts.length||S.pmin!=null||S.pmax!=null);
+  $("#reset").hidden=!(S.q||S.status!=="Available"||S.deal||S.bed!==""||S.locs.length||S.use||S.web||S.mg||S.area||S.types.length||S.pmin!=null||S.pmax!=null);
   { const v=S.sort+":"+S.dir, sel=$("#sort"); sel.value=[...sel.options].some(o=>o.value===v)?v:"custom"; }
   document.querySelectorAll("thead th.sort").forEach(th=>{const k=th.dataset.k==="ref"?"refN":th.dataset.k; if(!refMode&&k===S.sort) th.dataset.dir=S.dir>0?"\u2191":"\u2193"; else delete th.dataset.dir;});
   const tb=$("#tb");
   if(!res.length){
-    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.locs.length||S.area)tips.push("location"); if(S.types.length)tips.push("property type"); if(S.depts.length)tips.push("department"); if(S.pmin!=null||S.pmax!=null)tips.push("price"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
-    tb.innerHTML=`<tr><td colspan="7"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
+    const tips=[]; if(S.bed!=="")tips.push("bedrooms"); if(S.locs.length||S.area)tips.push("location"); if(S.types.length)tips.push("property type"); if(S.pmin!=null||S.pmax!=null)tips.push("price"); if(S.deal)tips.push("rent or sale"); if(S.status)tips.push("status"); if(S.web)tips.push("website");
+    tb.innerHTML=`<tr><td colspan="8"><div class="empty"><strong>No listings match</strong>${tips.length?"Try widening "+tips.join(", ")+", or clear the filters.":"Check the spelling, or search by reference number like 9072."}</div></td></tr>`;
     $("#more").hidden=true; syncHash(); return;
   }
   const show=res.slice(0,S.limit);
@@ -798,13 +801,14 @@ function render(){
       <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="mic">${typeLabel(o)}</div></td>
       <td class="c-proj">${proj}</td>
       <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
-      <td class="c-agent"><span class="agent"><span class="av" style="--h:${hue}">${esc(ini)}</span><span class="aname">${o.agent?hl(o.agent,terms):'<span class="sub">\u2014</span>'}</span></span>${o.dept?`<span class="dept" title="Department: ${esc(o.dept)}">${hl(deptShort(o.dept),terms)}</span>`:""}</td>
+      <td class="c-dept">${o.dept?`<span class="dept" title="${esc(o.dept)}">${hl(deptShort(o.dept),terms)}</span>`:'<span class="sub">\u2014</span>'}</td>
+      <td class="c-agent"><span class="agent"><span class="av" style="--h:${hue}">${esc(ini)}</span><span class="aname">${o.agent?hl(o.agent,terms):'<span class="sub">\u2014</span>'}</span></span></td>
       <td class="c-ref"><div class="lst">
         <span class="refwrap"><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
         ${url?`<a class="cta" href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}<span class="ctxt">View listing</span></a>`:""}
       </div></td>
     </tr>`;
-    const det=S.open===o.ref?`<tr class="detail"><td colspan="7"><dl class="dl">
+    const det=S.open===o.ref?`<tr class="detail"><td colspan="8"><dl class="dl">
       <div><dt>Project</dt><dd>${esc(o.project||"\u2014")}</dd></div>
       <div><dt>Unit</dt><dd>${esc(o.unit||"Not set in Salesforce")}</dd></div>
       <div><dt>Property type</dt><dd>${esc(o.ptype||"\u2014")}${o.ptypeGuess?' <span class="sub">(estimated from name)</span>':""}</dd></div>
@@ -827,7 +831,7 @@ function render(){
   if(target){
     const sim=similar(target);
     const what=[target.beds==null?"":target.beds===0?"Studio":target.beds+" bed",target.use==="com"?"commercial":"",target.deal==="rent"?"for rent":"for sale"].filter(Boolean).join(" ");
-    html+=`<tr class="sep"><td colspan="7"><b>Matching listings</b><span class="sub">${sim.length?`${sim.total>sim.length?`Closest ${sim.length} of ${fmt(sim.total)}`:fmt(sim.length)} available ${esc(what)}${target.loc?" in or around "+esc(target.loc):""}`:`No other available ${esc(what)} listings${target.loc?" in "+esc(target.loc):""} right now`}</span></td></tr>`;
+    html+=`<tr class="sep"><td colspan="8"><b>Matching listings</b><span class="sub">${sim.length?`${sim.total>sim.length?`Closest ${sim.length} of ${fmt(sim.total)}`:fmt(sim.length)} available ${esc(what)}${target.loc?" in or around "+esc(target.loc):""}`:`No other available ${esc(what)} listings${target.loc?" in "+esc(target.loc):""} right now`}</span></td></tr>`;
     html+=sim.map(o=>rowHTML(o,[])).join("");
   }
   tb.innerHTML=html;
@@ -857,7 +861,7 @@ function similar(t){
 function syncHash(){
   const p=new URLSearchParams();
   if(S.q)p.set("q",S.q); if(S.status!=="Available")p.set("status",S.status||"all");
-  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.locs.length)p.set("loc",S.locs.join("|")); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.mg)p.set("managed",S.mg); if(S.area)p.set("area",S.area); if(S.types.length)p.set("type",S.types.join("|")); if(S.depts.length)p.set("dept",S.depts.join("|")); if(S.pmin!=null)p.set("pmin",S.pmin); if(S.pmax!=null)p.set("pmax",S.pmax); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
+  if(S.deal)p.set("deal",S.deal); if(S.bed!=="")p.set("bed",S.bed); if(S.locs.length)p.set("loc",S.locs.join("|")); if(S.use)p.set("use",S.use); if(S.web)p.set("web","1"); if(S.mg)p.set("managed",S.mg); if(S.area)p.set("area",S.area); if(S.types.length)p.set("type",S.types.join("|")); if(S.pmin!=null)p.set("pmin",S.pmin); if(S.pmax!=null)p.set("pmax",S.pmax); if(S.sort+":"+S.dir!=="refN:-1")p.set("sort",S.sort+":"+S.dir);
   const h=p.toString(); try{history.replaceState(null,"",h?"#"+h:location.pathname+location.search)}catch(e){}
 }
 function readHash(){
@@ -886,7 +890,7 @@ $("#locclear").onclick=()=>{ S.locs=[]; locLabel(); drawLocList(); render(); };
 $("#locdone").onclick=closeLoc;
 document.addEventListener("click",e=>{ if(!$("#locms").contains(e.target)) closeLoc(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("#locpop").hidden){ closeLoc(); $("#locbtn").focus(); } });
-$("#depts").addEventListener("click",e=>{ const c=e.target.closest("[data-dept]"); if(!c) return; const v=c.dataset.dept;
+$("#depts")&&$("#depts").addEventListener("click",e=>{ const c=e.target.closest("[data-dept]"); if(!c) return; const v=c.dataset.dept;
   S.depts=v?(S.depts.includes(v)?S.depts.filter(x=>x!==v):[...S.depts,v]):[]; S.limit=100; fillDepts(); render(); });
 $("#types").addEventListener("click",e=>{ const c=e.target.closest("[data-type]"); if(!c) return; const v=c.dataset.type;
   S.types=v?(S.types.includes(v)?S.types.filter(x=>x!==v):[...S.types,v]):[]; S.limit=100; fillTypes(); render(); });
