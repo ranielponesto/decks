@@ -655,7 +655,7 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
 <!-- HERO -->
 <section class="hero" id="top" aria-label="Introduction">
   <div class="hero-slides">
-    <video class="hero-video" id="heroVideo" poster="hero-poster.jpg" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
+    <video class="hero-video" id="heroVideo" poster="hero-poster.jpg?v=4s" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
     <script>(function(){var v=document.getElementById('heroVideo');var m=matchMedia('(pointer:coarse)').matches||matchMedia('(max-width:1024px)').matches;v.src=m?'hero-phone.mp4?v=20260930':'hero-mobile.mp4?v=20260930';})();</script>
   </div>
   <div class="hero-shade"></div>
@@ -817,6 +817,10 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
 
   /* ---- hero video: autoplays in slow-mo; scroll/swipe down fast-forwards, up rewinds; the end glides to the next section ---- */
   const hero=$('.hero'), vid=$('#heroVideo');
+  const START=4;            // the clip begins 4 s in (opening skipped); files themselves are untouched
+  const toStart=()=>{ if(vid.currentTime<START-0.05){ try{ vid.currentTime=START; }catch(e){} } };
+  vid.addEventListener('loadedmetadata',toStart); if(vid.readyState>=1) toStart();
+  vid.addEventListener('timeupdate',()=>{ if(!window.__heroDrag && vid.currentTime<START-0.05) toStart(); });
   const MOBILE=matchMedia('(pointer:coarse)').matches;
   const IDLE=MOBILE?1:0.5;   // resting speed: slow motion on desktop; normal speed on phones (the opening shot is nearly static, and iOS handles 1x far better)
   const LANDSCAPE=matchMedia('(min-aspect-ratio:1/1)');
@@ -857,14 +861,14 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
         if(!vid.paused) vid.pause();
         if(v<0){
           if(scrubT===null) scrubT=vid.currentTime;
-          scrubT=Math.max(0,scrubT+v*dt);            // target keeps moving even while a seek is in flight
+          scrubT=Math.max(START,scrubT+v*dt);            // target keeps moving even while a seek is in flight
           if(!seeking && Math.abs(vid.currentTime-scrubT)>(MOBILE?0.12:1/48) && now-lastSeek>(MOBILE?90:0)){ seeking=true; lastSeek=now;
             if(!MOBILE && vid.fastSeek && Math.abs(vid.currentTime-scrubT)>.4) vid.fastSeek(scrubT); else vid.currentTime=scrubT; }
-          if(scrubT<=0) v=0;                          // reached the start: hold, then resume slow-mo
+          if(scrubT<=START) v=0;                          // reached the start: hold, then resume slow-mo
         }
       }
       if(v>=0.07) scrubT=null;
-      if(!MOBILE && LANDSCAPE.matches && vid.duration){ const p=Math.min(1,Math.max(0,vid.currentTime/(vid.duration*0.25))); vid.style.objectPosition='center '+(p*p*(3-2*p)*50).toFixed(2)+'%'; }
+      if(!MOBILE && LANDSCAPE.matches && vid.duration){ const p=Math.min(1,Math.max(0,(vid.currentTime-START)/((vid.duration-START)*0.25))); vid.style.objectPosition='center '+(p*p*(3-2*p)*50).toFixed(2)+'%'; }
       hero.classList.toggle('is-fast',Math.abs(v)>1.2);
       hero.classList.toggle('is-rewind',v<0);
     }
@@ -872,7 +876,7 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   })(performance.now());
   vid.addEventListener('ended',()=>{
     if(engaged) leave();
-    else { vid.currentTime=0; play(); }      // untouched: keep looping in slow-mo
+    else { vid.currentTime=START; play(); }      // untouched: keep looping in slow-mo
   });
   // scrolled back to the top → hero takes over again and resumes
   window.addEventListener('scroll',()=>{
@@ -892,7 +896,7 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   /* ---- touch scrub: drag like a video scrubber. Right or up = forward, left or down = back ---- */
   let dragging=false, sx0=0, sy0=0, t0=0, target=0, fwd=false;
   const dur=()=>vid.duration||20;
-  const SPP=()=>dur()/(Math.max(innerWidth,innerHeight)*1.1);        // one long drag ≈ the whole clip
+  const SPP=()=>(dur()-START)/(Math.max(innerWidth,innerHeight)*1.1);        // one long drag ≈ the whole clip
   function seekTo(t){ if(seeking) return; seeking=true; lastSeek=performance.now();
     try{ if(vid.fastSeek) vid.fastSeek(t); else vid.currentTime=t; }catch(e){ vid.currentTime=t; } }
   window.addEventListener('touchstart',e=>{
@@ -905,7 +909,7 @@ html.hero-lock .hero,html.hero-lock .content,html.hero-lock .spacer{touch-action
   const onMove=e=>{ if(!dragging||!gated()) return; block(e);
     const p=e.touches[0], dx=p.clientX-sx0, dy=p.clientY-sy0;
     const d=Math.abs(dx)>Math.abs(dy)?dx:-dy;                 // dominant direction
-    target=Math.max(0,Math.min(dur()-0.05,t0+d*SPP())); fwd=d>0;
+    target=Math.max(START,Math.min(dur()-0.05,t0+d*SPP())); fwd=d>0;
     if(Math.abs(vid.currentTime-target)>0.04) seekTo(target);
   };
   window.addEventListener('touchmove',onMove,{capture:true,passive:false});
