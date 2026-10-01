@@ -19,6 +19,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 ap = argparse.ArgumentParser()
 ap.add_argument("export", nargs="?")
 ap.add_argument("--passcode", required=True)
+ap.add_argument("--depts", help="Salesforce Project Name / Department report (.xls/.xlsx) to tag listings with")
 args = ap.parse_args()
 ITER = 310000
 enc_path = ROOT / "tracker/listings.enc"
@@ -36,10 +37,34 @@ def decrypt(env, pw):
     key = PBKDF2HMAC(hashes.SHA256(), 32, d(env["salt"]), env["iter"]).derive(pw.encode())
     return json.loads(gzip.decompress(AESGCM(key).decrypt(d(env["iv"]), d(env["ct"]), None)))
 
+def load_depts(path):
+    import html as H
+    raw = open(path, "rb").read()
+    if raw[:600].lower().lstrip().startswith((b"<head", b"<html", b"<table", b"<meta")):  # Salesforce "xls" is HTML
+        txt = raw.decode("latin-1"); rows = []
+        for tr in re.findall(r"<tr>(.*?)</tr>", txt, flags=re.S):
+            rows.append([H.unescape(re.sub(r"<[^>]+>", "", c)).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", tr, flags=re.S)])
+    else:
+        rows = pd.read_excel(path, header=None, dtype=str).fillna("").values.tolist()
+    hi = next(i for i, r in enumerate(rows) if any(str(c).strip().lower() == "department" for c in r))
+    pc = next(i for i, c in enumerate(rows[hi]) if "project" in str(c).lower()); dc = [str(c).strip().lower() for c in rows[hi]].index("department")
+    cnt = {}
+    for r in rows[hi + 1:]:
+        p = " ".join(str(r[pc]).split()).lower(); d = str(r[dc]).strip()
+        if p and d and not d.lower().startswith("test"): cnt.setdefault(p, {}); cnt[p][d] = cnt[p].get(d, 0) + 1
+    return {p: max(c, key=c.get) for p, c in cnt.items()}
+
+def previous_depts():
+    try: return decrypt(json.loads(enc_path.read_text()), args.passcode).get("depts", {})
+    except Exception:
+        try: return json.loads(plain_cache.read_text()).get("depts", {})
+        except Exception: return {}
+
 if not args.export:  # rotate passcode only
     if not plain_cache.exists():
         sys.exit(f"No cached data at {plain_cache}. Re-run with the Salesforce export.")
     data = json.loads(plain_cache.read_text())
+    if args.depts: data["depts"] = load_depts(args.depts)
     enc_path.write_text(json.dumps(encrypt(data, args.passcode)))
     print("Passcode rotated; data unchanged, as of", data["asOf"]); sys.exit()
 
@@ -59,7 +84,7 @@ def cv(v):
 header = [str(hdr[i]).strip() for i in idx]
 rows = [[cv(r[i]) for i in idx] for _, r in raw.iloc[hi + 1:].iterrows()]
 rows = [r for r in rows if any(v is not None for v in r)]
-data = {"asOf": as_of, "header": header, "rows": rows}
+data = {"asOf": as_of, "header": header, "rows": rows, "depts": load_depts(args.depts) if args.depts else previous_depts()}
 enc_path.write_text(json.dumps(encrypt(data, args.passcode)))
 plain_cache.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))  # local only, never committed
 old = ROOT / "tracker/listings.json"

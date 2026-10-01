@@ -127,6 +127,8 @@ td.c-agent{white-space:nowrap}
 :root[data-theme="dark"] .av{background:hsl(var(--h) 28% 26%);color:hsl(var(--h) 45% 86%)}
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .av{background:hsl(var(--h) 28% 26%);color:hsl(var(--h) 45% 86%)} }
 .aname{font-weight:500}
+.dept{display:block;width:max-content;margin:6px 0 0 37px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--accent);background:var(--soft);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.dept::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:1px;opacity:.7}
 .deal{display:none}
 .mgd{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;font-size:10px;font-weight:700;background:var(--ok);color:#fff;margin-left:6px;vertical-align:2px}
 td.c-furn:empty::after{content:"\2014";color:var(--muted)}
@@ -266,6 +268,10 @@ footer{color:var(--muted);font-size:12px;padding:0 0 32px}
   .agent{gap:6px}
   .av{width:20px;height:20px;font-size:9px}
   td.c-agent .aname{font-size:12.5px}
+  td.c-agent{display:flex;align-items:center;gap:6px}
+  td.c-agent .agent{min-width:0;overflow:hidden}
+  td.c-agent .aname{overflow:hidden;text-overflow:ellipsis}
+  .dept{display:inline-block;margin:0;font-size:10px;padding:2px 7px;flex:none}
   td.c-ref{grid-column:2;grid-row:4;margin-top:7px;justify-self:end}
   .lst{flex-direction:row;align-items:center;justify-content:flex-end;gap:6px}
   .lst .st{margin-left:6px}
@@ -538,6 +544,18 @@ function guessType(o){
   return "Apartment";
 }
 const TYPE_ORDER=["Apartment","Villa","Townhouse","Penthouse","Duplex","Hotel apartment","Office","Retail","Showroom","Warehouse","Land"];
+const pkey=s=>String(s||"").replace(/\s+/g," ").trim().toLowerCase();
+let DEPTS={};
+function deptShort(d){ if(/tenant commercial/i.test(d)) return "Commercial"; return d.replace(/\s+agents?$/i,"").replace(/\s*-\s*general enquiry$/i," enquiry").trim(); }
+/* Salesforce "Project Name / Department" report -> {project: most common department} */
+function deptsFromAoa(aoa){
+  const hi=aoa.findIndex(r=>r&&r.some(c=>c&&/^department$/i.test(String(c).trim()))&&r.some(c=>c&&/project/i.test(String(c))));
+  if(hi<0) return null;
+  const pc=aoa[hi].findIndex(c=>c&&/project/i.test(String(c))), dc=aoa[hi].findIndex(c=>c&&/^department$/i.test(String(c).trim()));
+  const cnt={};
+  for(const r of aoa.slice(hi+1)){ const p=pkey(r&&r[pc]), d=String((r&&r[dc])||"").trim(); if(!p||!d||/^test/i.test(d)) continue; (cnt[p]=cnt[p]||{})[d]=((cnt[p]||{})[d]||0)+1; }
+  const out={}; for(const p in cnt){ const c=cnt[p]; out[p]=Object.keys(c).sort((a,b)=>c[b]-c[a])[0]; } return out;
+}
 function parseTable(asOf,header,rows){
   const ix={};for(const k in COLS){ix[k]=header.findIndex(h=>h&&COLS[k].test(String(h).trim()))}
   if(ix.ref<0) throw new Error("This file has no \u201cListings Ref No.\u201d column. Export the All Listings report from Salesforce and try again.");
@@ -561,8 +579,8 @@ function parseTable(asOf,header,rows){
   }
   // fill missing community from the project's other listings
   for(const o of out){ if(!o.comm&&commByProj[o.project]){const c=commByProj[o.project];o.comm=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];o.commInferred=true} }
-  for(const o of out){ if(!o.ptype){o.ptype=guessType(o);o.ptypeGuess=true} o.loc=o.comm||o.sub||""; o.area=areaOf(o.comm)||areaOf(o.sub); o.hay=[o.ref,o.project,o.unit,o.comm,o.sub,o.agent,o.ptype].join(" \u0001 ").toLowerCase(); }
-  return {asOf:String(asOf||"").replace(/\s*\u2022.*$/,"").replace(/Arabia Standard Time\/AST/,"AST"),list:out,raw:{asOf:String(asOf||""),header,rows}};
+  for(const o of out){ if(!o.ptype){o.ptype=guessType(o);o.ptypeGuess=true} o.loc=o.comm||o.sub||""; o.area=areaOf(o.comm)||areaOf(o.sub); o.dept=DEPTS[pkey(o.project)]||""; o.hay=[o.ref,o.project,o.unit,o.comm,o.sub,o.agent,o.ptype,o.dept].join(" \u0001 ").toLowerCase(); }
+  return {asOf:String(asOf||"").replace(/\s*\u2022.*$/,"").replace(/Arabia Standard Time\/AST/,"AST"),list:out,raw:{asOf:String(asOf||""),header,rows,depts:DEPTS}};
 }
 function fromSheetArrays(aoa){
   const hi=aoa.findIndex(r=>r&&r.some(c=>c&&/ref no/i.test(String(c))));
@@ -760,7 +778,7 @@ function render(){
       <td class="num c-rate"><div class="price">${priceHTML(o)}</div><div class="mic">${typeLabel(o)}</div></td>
       <td class="c-proj">${proj}</td>
       <td class="c-furn">${o.furn?`<span class="furn ${o.furn}" title="${FURN[o.furn]}">${o.furn}</span>`:""}</td>
-      <td class="c-agent"><span class="agent"><span class="av" style="--h:${hue}">${esc(ini)}</span><span class="aname">${o.agent?hl(o.agent,terms):'<span class="sub">\u2014</span>'}</span></span></td>
+      <td class="c-agent"><span class="agent"><span class="av" style="--h:${hue}">${esc(ini)}</span><span class="aname">${o.agent?hl(o.agent,terms):'<span class="sub">\u2014</span>'}</span></span>${o.dept?`<span class="dept" title="Department: ${esc(o.dept)}">${hl(deptShort(o.dept),terms)}</span>`:""}</td>
       <td class="c-ref"><div class="lst">
         <span class="refwrap"><span class="ref">${hl(o.ref,terms)}</span><button class="copy" data-copy="${esc(o.ref)}" aria-label="Copy ${esc(o.ref)}" title="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>${avail?"":`<span class="st ${stClass(o.status)}">${esc(o.status)}</span>`}</span>
         ${url?`<a class="cta" href="${url}" target="_blank" rel="noopener" aria-label="View ${esc(o.ref)} on capstoneproperty.com">${WEBICON}<span class="ctxt">View listing</span></a>`:""}
@@ -772,6 +790,7 @@ function render(){
       <div><dt>Property type</dt><dd>${esc(o.ptype||"\u2014")}${o.ptypeGuess?' <span class="sub">(estimated from name)</span>':""}</dd></div>
       <div><dt>Furnishing</dt><dd>${o.furn?FURN[o.furn]:"Not in the export"}</dd></div>
       <div><dt>Status</dt><dd>${esc(o.status||"\u2014")}</dd></div>
+      <div><dt>Department</dt><dd>${esc(o.dept||"Not set in Salesforce")}</dd></div>
       <div><dt>Record type</dt><dd>${esc(o.rtype||"\u2014")}</dd></div>
       <div><dt>Community</dt><dd>${esc(o.comm||"\u2014")}${o.commInferred?' <span class="sub">(from project)</span>':""}</dd></div>
       <div><dt>Sub community</dt><dd>${esc(o.sub||"\u2014")}</dd></div>
@@ -875,6 +894,13 @@ $("#file").onchange=async e=>{
   try{ toast("Reading "+f.name+"\u2026"); await loadXLSX();
     const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
     const aoa=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:null});
+    const dm=deptsFromAoa(aoa);
+    if(dm){ if(!DB) throw new Error("Unlock the tracker first.");
+      const n=Object.keys(dm).length; if(!n) throw new Error("No project departments found in that file.");
+      DEPTS=dm; const again=parseTable(DB.raw.asOf,DB.raw.header,DB.raw.rows); again.asOf=DB.asOf;
+      store.set("lt-depts",JSON.stringify(dm)); load(again,"upload");
+      const tagged=again.list.filter(o=>o.dept&&/^avail/i.test(o.status)).length;
+      toast(`Departments for ${fmt(n)} projects loaded, ${fmt(tagged)} available listings tagged`); showBanner("depts"); return; }
     const data=fromSheetArrays(aoa); if(!data.list.length) throw new Error("No listings found in that file.");
     const stamp=data.asOf||new Date().toISOString();
     if(!data.asOf) data.asOf="loaded "+new Date().toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"});
@@ -884,6 +910,8 @@ $("#file").onchange=async e=>{
 
 /* ---------- boot ---------- */
 function boot(seed){
+  DEPTS=seed.depts||{}; let pend=false;
+  try{ const ld=store.get("lt-depts"); if(ld){ DEPTS=JSON.parse(ld); pend=true; } }catch(e){ store.del("lt-depts"); }
   let initial=parseTable(seed.asOf,seed.header,seed.rows),src="seed";
   const up=store.get("lt-upload");
   if(up){try{const u=JSON.parse(up);const d=fromSheetArrays(u.aoa);d.asOf=d.asOf||u.asOf;
@@ -891,6 +919,7 @@ function boot(seed){
     const stampOf=s=>String(s||"").replace(/\D/g,"").slice(0,14);
     if(stampOf(u.asOf)>stampOf(seed.asOf)){initial=d;src="upload"}else store.del("lt-upload")}catch(e){store.del("lt-upload")}}
   readHash(); load(initial,src);
+  if(src==="upload") showBanner(); else if(pend) showBanner("depts");
 }
 /* ---------- passcode gate: the feed is AES-GCM encrypted, key derived from the passcode ---------- */
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -947,9 +976,10 @@ $("#admForm").addEventListener("submit",async e=>{ e.preventDefault();
   else { $("#admLog").className="log err"; $("#admLog").textContent="That import passcode didn\u2019t work."; $("#admPass").select(); } });
 $("#importbtn").onclick=()=>{ const pick=()=>$("#file").click(); if(isAdmin()) pick(); else askAdmin(pick); };
 applyAdmin();
-function showBanner(){ if(!DB||!DB.raw) return; const b=$("#banner"); b.hidden=false;
+function showBanner(kind){ if(!DB||!DB.raw) return; const b=$("#banner"); b.hidden=false;
+  if(kind==="depts"){ $("#bannerTxt").textContent=`Department tags loaded on this device only. Publish so everyone sees them.`; return; }
   $("#bannerTxt").textContent=`New export loaded on this device only (${fmt(DB.list.length)} listings, ${DB.asOf.replace(/^as of\s*/i,"as of ")}). Publish it so everyone sees it.`; }
-$("#bannerDrop").onclick=()=>{ store.del("lt-upload"); location.reload(); };
+$("#bannerDrop").onclick=()=>{ store.del("lt-upload"); store.del("lt-depts"); location.reload(); };
 function openPub(){ if(!DB||!DB.raw) return alert("Nothing loaded yet."); const m=$("#pub"); m.hidden=false;
   const avail=DB.list.filter(o=>/^avail/i.test(o.status)).length;
   $("#pubWhat").textContent=`${fmt(DB.list.length)} listings (${fmt(avail)} available), ${DB.asOf.replace(/^as of\s*/i,"as of ")}. Everyone will need the passcode below from the moment this goes live.`;
@@ -972,7 +1002,7 @@ $("#pubForm").addEventListener("submit",async e=>{
       const h2=h.replace(/(id="listingsTile"[\s\S]*?<span class="card-area">)[\d,]+ available/,`$1${fmt(avail)} available`).replace(/(id="listingsTile"[\s\S]*?<span class="u-area">)[\d,]+ available/,`$1${fmt(avail)} available`);
       if(h2!==h) await ghPut("app/index.html",tok,utf8b64(h2),`App hub: ${fmt(avail)} available listings`); } }catch(e){ console.warn("hub count",e); }
     if($("#pubRemember").checked) store.set("lt-gh",tok); else store.del("lt-gh");
-    store.set("lt-pass",pw); store.del("lt-upload"); ENV=null;
+    store.set("lt-pass",pw); store.del("lt-upload"); store.del("lt-depts"); ENV=null;
     log.className="log ok"; log.textContent="Published. GitHub usually takes 3 to 15 minutes to update the live site; after that, everyone will be asked for the passcode "+pw+" if it changed.";
     $("#banner").hidden=true; go.textContent="Done"; setTimeout(()=>{ $("#pub").hidden=true; go.textContent="Publish"; go.disabled=false; },6000);
   }catch(err){ log.className="log err"; log.textContent=err.message||String(err); go.disabled=false; }
