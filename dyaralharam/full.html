@@ -1576,7 +1576,7 @@ function browseSlide(){
           <span class="feat-badge" style="color:${T(c).col}">${icon}${esc(T(c).label)}${isFlip?' · online':` · ${count} ${unit}`}</span>
           <b dir="auto">${esc(c.name||'Untitled')}</b>
           ${has(c.description)?`<span class="feat-desc" dir="auto">${esc(c.description)}</span>`:''}
-          <div class="feat-meta"><span class="feat-cta" style="color:${T(c).col}">Open ›</span>${has(c.added)?`<span class="feat-when">${esc(c.added)}</span>`:''}</div>
+          <div class="feat-meta"><span class="feat-cta" style="color:${T(c).col}">Open ›</span>${has(c.updated)&&c.updated!==c.added?`<span class="feat-when">Updated ${esc(c.updated)}</span>`:(has(c.added)?`<span class="feat-when">${esc(c.added)}</span>`:'')}</div>
         </div>
       </button>`);
       if(has(pic)) card.querySelector('.feat-pic').appendChild(lazyImg(pic, c.name||c.id));
