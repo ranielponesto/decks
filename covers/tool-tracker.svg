@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1600">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#0b3a52"/><stop offset="0.55" stop-color="#0e4f63"/><stop offset="1" stop-color="#0a1e33"/></linearGradient>
+<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fe0e8"/><stop offset="1" stop-color="#2c9fb2"/></linearGradient></defs>
+<rect width="900" height="1600" fill="url(#g)"/>
+<g transform="translate(110 420)">
+ <rect width="680" height="640" rx="36" fill="#0a2236" fill-opacity=".75" stroke="#7fb7c6" stroke-opacity=".35" stroke-width="4"/>
+ <rect x="48" y="48" width="220" height="22" rx="11" fill="#e9f3f6" fill-opacity=".8"/><rect x="48" y="86" width="140" height="16" rx="8" fill="#e9f3f6" fill-opacity=".35"/>
+ <g fill="url(#b)"><rect x="70" y="360" width="62" height="200" rx="10"/><rect x="170" y="290" width="62" height="270" rx="10"/><rect x="270" y="400" width="62" height="160" rx="10"/><rect x="370" y="230" width="62" height="330" rx="10"/><rect x="470" y="320" width="62" height="240" rx="10"/><rect x="570" y="180" width="62" height="380" rx="10"/></g>
+ <polyline points="101,330 201,262 301,370 401,200 501,290 601,150" fill="none" stroke="#f1c27d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+ <g fill="#f1c27d"><circle cx="101" cy="330" r="12"/><circle cx="201" cy="262" r="12"/><circle cx="301" cy="370" r="12"/><circle cx="401" cy="200" r="12"/><circle cx="501" cy="290" r="12"/><circle cx="601" cy="150" r="12"/></g>
+</g>
+<g transform="translate(110 1110)" fill="#e9f3f6"><rect width="680" height="70" rx="16" fill-opacity=".12"/><rect y="90" width="680" height="70" rx="16" fill-opacity=".08"/>
+<rect x="28" y="24" width="260" height="22" rx="11" fill-opacity=".55"/><rect x="520" y="24" width="130" height="22" rx="11" fill="#9fe0e8" fill-opacity=".8"/><rect x="28" y="114" width="200" height="22" rx="11" fill-opacity=".4"/><rect x="520" y="114" width="130" height="22" rx="11" fill="#9fe0e8" fill-opacity=".55"/></g>
+</svg>
