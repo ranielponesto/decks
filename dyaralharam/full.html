@@ -1532,7 +1532,8 @@ function browseSlide(){
   const s = el(`<section class="slide"><div class="browse">
     <div class="eyebrow">${esc(CAMPAIGN.kicker||'Creatives')}</div>
     <h1>${esc(CAMPAIGN.project)} <em>creatives</em></h1>
-    <button class="ui solid dlproject" id="dlProject" style="margin:10px 0 14px">⬇ Download creatives (.zip)</button>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px"><button class="ui solid dlproject" id="dlProject" style="margin:0">⬇ Download creatives (.zip)</button>
+    <button class="ui invmaker" onclick="location.href='invitation/'" style="margin:0">✉ Invitation Maker</button></div>
     ${has(CAMPAIGN.mapUrl)?`<a class="maplink" href="${esc(CAMPAIGN.mapUrl)}" target="_blank" rel="noopener">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
       View location on Google Maps</a>`:''}${has(CAMPAIGN.adUrl)?`<a class="maplink" href="${esc(CAMPAIGN.adUrl)}" target="_blank" rel="noopener">
